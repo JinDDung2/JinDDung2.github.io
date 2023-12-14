@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "ko" }}">
+
+{%- include head.html -%}
+    <meta property="og:image" content="https://t1.daumcdn.net/cfile/tistory/2237674457FB7EA215">
+<body>
+
+    {%- include header.html -%}
+
+    <main class="page-content" aria-label="Content">
+        <div class="wrapper">
+
+            {%- include about.html -%}
+
+            <!-- {%- if site.data.experience.size > 0 -%}
+                {%- include experience.html -%}
+            {%- endif -%} -->
+
+            {%- if site.data.projects.size > 0 -%}
+                {%- include projects.html -%}
+            {%- endif -%}
+
+            <!-- {%- if site.data.skill.size > 0 -%}
+                {%- include skill.html -%}
+            {%- endif -%} -->
+
+            {%- if site.data.education.size > 0 -%}
+                {%- include education.html -%}
+            {%- endif -%}
+
+
+
+        </div>
+    </main>
+
+    {%- include footer.html -%}
+    {% if site.darkmode == false %}
+    <script src="{{ '/assets/js/index.js' | relative_url }}"></script>
+  {% endif %}
+</body>
+
+</html>

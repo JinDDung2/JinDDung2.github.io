@@ -1,0 +1,50 @@
+# Project template
+- name: Givemeticon
+  github: f-lab-edu/givemeticon
+  dates: 2023.09 ~ 2023.11
+  quote: >
+    기프티콘 전문 중고거래 플랫폼으로, 사용하지 않거나 만료가 임박한 기프티콘을 판매하고 저렴한 가격으로 구매할 수 있는 환경을 제공하는 서비스
+  description: >
+    Description about the work on/with the project
+
+- name: 내친
+  github: JinDDung2/sns-practice
+  dates: 2023.04 ~ 2023.06
+  quote: >
+    Facebook, Thread, Twitter와 같은 SNS 서비스
+  description: >
+    - Java 11, Spring Boot 2.7, Spring Security, JWT, Mysql, Redis, AWS
+
+    - 분산 환경에서 안정성을 확보하는 로그인 처리
+      - 세션 스토리지를 분리하고 In-memory DB로 Redis를 활용하여 **데이터 불일치 문제 해결**
+      - 세션은 stateful하여 사용자가 증가함에 따라 **성능에 문제**를 야기할 수 있다고 판단하여 **토큰 인증으로 전환**
+
+    - 특정 게시글 응답속도 개선
+      - 게시글 관련 기능을 개발하고 테스트 중 동일한 요청이 여러 차례 들어오는 상황에서 데이터베이스 연결 및 연산의 비효율성을 인지하여 **Redis를 활용한 글로벌 캐싱** 적용 → 인기 게시글 응답속도 32% 증가
+      - Redis 서버의 메모리 사용에 제한을 두기 위해 **allkeys-lfu 정책을 도입**하여 캐시 데이터를 효과적으로 관리함으로써 서비스 성능 저하 및 서버 다운을 방지
+
+    - Redis의 **토큰 저장소와 캐시 저장소를 분리**하여 부하를 분산하여 Redis 및 어플리케이션의 성능 최적화를 통한 응답 속도를 향상
+
+    - ~~피드시스템 Fan Out On Write(Push Model) 적용 : 데이터가 생성되자마자 실시간으로 사용자에게 전달할 수 있어, 사용자 경험을 크게 향상~~
+
+- name: 우아한 레시피
+  github: JinDDung2/woowahan-recipe
+  dates: 2023.01 ~ 2023.02
+  quote: >
+    이키머스와 레시피 커뮤니티를 합하여 레시피에 재료들을 바로 구매 가능한 서비스
+  description: >
+    - Java 11, Spring Boot 2.7, Spring Security, JPA QueryDsl, Mysql, Thymeleaf, Docker, AWS Ec2, AWS S3
+
+    - [WBS](https://docs.google.com/spreadsheets/d/1xUwk6fgmqTmHhxgPIve0l4bc1mUKWrWxojsINmFgmtc/edit#gid=0)를 통해 프로젝트 일정 및 진행 상황을 정리하고 업데이트하여 팀 내에서 프로젝트 진행 상황을 시각적으로 파악할 수 있는 시스템 구축
+
+    - 장바구니 데이터를 효율적으로 관리하며, 분산 환경에서 안정성을 확보하기 위해 DB에 장바구니 데이터를 저장하여 데이터 불일치 문제를 해결
+
+    - 멀티스레드 환경에서 재고 데이터 일관성 유지
+      - 비관적 락을 사용하여 동시성 제어하여 재고 불일치 문제 해결
+      - 상품과 재고 데이터를 분리하여 락이 걸릴 때 상품에 락이 걸리는 문제 해결
+
+    - S3를 이용한 이미지 업로드 기능이 로컬에서는 동작하지만, 배포된 서비스에서 IOException 발생하여 UUID를 이용하여 랜덤 파일명 생성 후, 기존 파일 확장자를 추가해 파일명 중복 및 확장자 문제를 해결하여 S3 이미지 업로드 기능이 정상 동작하도록 개선
+
+    - 서버에서 계산한 금액과 클라이언트 요청 금액이 일치함을 확인하여 클라이언트가 결제 가격 위조하는 것을 방지
+
+    - 주문 조회 시 발견된 N+1 문제를 지연 로딩과 fetch 전략을 적용함으로써 JPA 쿼리 최적화 및 응답 속도 향상
