@@ -1,7 +1,7 @@
 # Project template
 - name: Givemeticon
   github: f-lab-edu/givemeticon
-  dates: 2023.09 ~ 2023.12
+  dates: 2023.09 ~ 2024.01
   quote: >
     기프티콘 전문 중고거래 플랫폼으로, 사용하지 않거나 만료가 임박한 기프티콘을 판매하고 저렴한 가격으로 구매할 수 있는 환경을 제공하는 서비스
   description: >
@@ -17,7 +17,8 @@
 
     - 메세지 큐를 도입하고 비동기적 처리를 통해 핵심 기능과 부가 기능을 분리하여 시스템 응답성 향상 및 확장성 강화
 
-    - 선착순 쿠폰 데이터 일관성을 보장하기 위해 DB 비관적 락에서 분산 락으로 개선하여, **응답속도를 약 X% 향상**
+    - 분산 환경에서 Lock을 통해 동기화된 처리를 제공하는 Distributed-Lock을 구현하여 시스템 안정성 강화
+      - 커스텀 애노테이션(@DistributedLock)을 도입하여 비지니스 로직과 락을 명확히 분리함으로써 코드의 가독성과 유지보수성을 향상
 
 - name: 내친
   github: JinDDung2/sns-practice
