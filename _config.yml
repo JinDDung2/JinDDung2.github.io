@@ -40,11 +40,8 @@ github_username: jinDDung2
 # about_title: About Me (Use this to override about section title)
 about_profile_image: (eg. images/profile.jpg)
 about_content: |
-  - Java/Spring 기반의 백엔드 개발자로 지속적 학습, 정보 공유를 하고 있습니다.
-  - 단순한 학습이 아니라 기록과 문서화를 중요하게 생각하여 블로그, 깃헙 등을 통해 **꾸준하게 기록**하고 있습니다.
-  - **지식을 공유하고 의견 나누기**를 좋아하여 스터디 참여에 적극적이며 **생각을 나누는 시간**을 소중하게 보냅니다.
-  - 또한, 새로운 기술 학습과 기존의 문제를 해결하는 것을 공유하는 컨퍼런스에 참여하는 것도 좋아합니다.
-  - 모르는 것을 빠르게 질문하며, 제 생각을 드러내거나 타인에 의견을 수용하는 것에 불편함이 없습니다.
+  백엔드에서 쿼리 최적화로 15% 성능 향상을 달성하였으며, AOP를 활용해 비즈니스 로직과 부가 로직을 분리한 경험이 있습니다. 
+  또한, 효과적인 의사소통을 중시하여 좋은 질문하는 문화를 조성하는 것을 좋아하며, [Notion](https://night-comma-b4a.notion.site/23-01-13-23-02-16-12ddd64750ad46a0b1547e64ab6fbf5c) 및 [WBS](https://docs.google.com/spreadsheets/d/1xUwk6fgmqTmHhxgPIve0l4bc1mUKWrWxojsINmFgmtc/edit?usp=sharing) 활용해 일정 공유와 기록을 통해 팀의 협업을 강화한 경험이 있습니다.
 
 # Projects Section
 # projects_title: Projects
