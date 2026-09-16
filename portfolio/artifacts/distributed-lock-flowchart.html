@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>분산 락 & 트랜잭션 처리 플로우차트</title>
+<style>
+  :root {
+    --ink: #252a2c; --muted: #626b70; --line: #dde2e3;
+    --paper: #ffffff; --canvas: #f7f8f9;
+    --accent: #22695c; --accent-soft: #edf5f1;
+    --risk: #9b4949; --risk-soft: #fcf0ef;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper); color: var(--ink);
+    font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    word-break: keep-all;
+  }
+  h1, h2, p { margin: 0; }
+  h1, h2 { font-weight: 650; line-height: 1.4; }
+  .wrap { width: calc(100% - 80px); max-width: 1000px; margin-inline: auto; }
+  .eyebrow { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+  .project-intro { padding: 48px 0 30px; }
+  .project-intro h1 { margin: 12px 0 14px; font-size: 38px; }
+  .project-subtitle { font-size: 16px; color: var(--muted); max-width: 640px; }
+  .meta-row { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 28px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .meta-cell { padding: 14px 20px 14px 0; }
+  .meta-cell + .meta-cell { border-left: 1px solid var(--line); padding-left: 20px; }
+  .meta-cell .label { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+  .meta-cell .value { font-size: 14px; font-weight: 650; color: var(--ink); }
+
+  .case-nav { border-bottom: 1px solid var(--line); background: #fafbfc; position: sticky; top: 0; z-index: 5; }
+  .case-nav .wrap { display: flex; gap: 28px; }
+  .case-nav button {
+    display: flex; align-items: center; gap: 9px; padding: 16px 0; font-size: 12px; color: var(--muted);
+    background: none; border: none; border-bottom: 2px solid transparent; font-family: inherit; cursor: pointer;
+  }
+  .case-nav button[aria-current] { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+  .case-content { padding: 44px 0 64px; }
+  .tab-view[hidden] { display: none; }
+  .section-label { color: var(--muted); font-size: 11px; font-weight: 700; margin-bottom: 12px; }
+
+  figure { margin: 0; }
+  .structure { border: 1px solid var(--line); border-radius: 6px; background: var(--canvas); overflow: hidden; }
+  .structure > figcaption { padding: 14px 22px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--paper); }
+
+  /* ---- Screen 1: flowchart ---- */
+  .flow-body { padding: 36px 40px 30px; display: flex; flex-direction: column; align-items: center; }
+  .node {
+    border: 1px solid #ccd4d7; border-radius: 4px; background: #fff;
+    min-height: 54px; width: 380px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 12px 16px; text-align: center; font-size: 13px; line-height: 1.5; color: var(--ink);
+  }
+  .node small { color: var(--muted); font-size: 11px; margin-top: 3px; }
+  .node code { font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted); }
+  .node.risk { background: var(--risk-soft); color: var(--risk); border-color: #eacac7; }
+  .node.good { background: var(--accent-soft); color: var(--accent); border-color: #bacdc8; }
+  .node.decision { background: var(--canvas); border-style: dashed; border-color: #b7bfc2; }
+  .down { text-align: center; color: #818b8f; height: 26px; line-height: 26px; font-size: 18px; }
+  .branch-label { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+  .branch-label.fail { color: var(--risk); background: var(--risk-soft); }
+  .branch-label.ok { color: var(--accent); background: var(--accent-soft); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; max-width: 820px; margin-top: 4px; }
+  .branch { display: flex; flex-direction: column; align-items: center; }
+  .branch .node { width: 100%; max-width: 340px; }
+  .branch-col-fail { border-right: 1px solid var(--line); padding-right: 20px; }
+  .branch-col-ok { padding-left: 20px; }
+  .scope { border: 1px dashed #8aa99f; border-radius: 4px; padding: 14px 16px; width: 100%; max-width: 340px; }
+  .scope-label { display: block; color: var(--accent); font-size: 10px; margin-bottom: 10px; font-weight: 700; }
+  .sub-steps { display: flex; flex-direction: column; gap: 8px; }
+  .sub-step { display: flex; align-items: baseline; gap: 8px; font-size: 12px; color: var(--ink); }
+  .sub-step .n { color: var(--muted); font-size: 11px; flex: 0 0 auto; }
+  .principle { margin-top: 44px; padding-top: 34px; border-top: 1px solid var(--line); }
+  .decision-lead { font-size: 18px; line-height: 1.6; font-weight: 650; color: var(--ink); margin-bottom: 14px; max-width: 720px; }
+  .decision-list { padding-left: 18px; margin: 0; color: var(--muted); font-size: 14px; max-width: 720px; }
+  .decision-list li + li { margin-top: 9px; }
+  .decision-list strong { color: var(--ink); font-weight: 600; }
+  .decision-list code { font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--accent); background: var(--canvas); padding: 1px 4px; border-radius: 3px; }
+  .param-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .param-grid h3 { font-size: 13px; margin: 0 0 8px; font-weight: 650; }
+  .param-grid p { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 0; }
+
+  /* ---- Screen 2: sequence diagram ---- */
+  .seq-body { padding: 30px 34px 34px; background: var(--paper); }
+  .sequence { position: relative; }
+  .actors { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--line); padding-bottom: 4px; position: relative; z-index: 1; }
+  .actor { text-align: center; padding: 6px 6px 12px; }
+  .actor .name { font-size: 12px; font-weight: 700; color: var(--ink); }
+  .actor .role { font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .lifelines { position: absolute; left: 0; right: 0; top: 64px; bottom: 22px; display: grid; grid-template-columns: repeat(5, 1fr); z-index: 0; pointer-events: none; }
+  .lifelines .line { width: 0; margin: 0 auto; border-left: 1px dashed #ccd4d7; height: 100%; }
+  .messages { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(5, 1fr); row-gap: 30px; padding: 26px 0 4px; }
+  .msg { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0 6px; }
+  .msg .label { font-size: 11px; color: var(--ink); text-align: center; line-height: 1.45; }
+  .msg .label small { display: block; color: var(--muted); font-size: 10px; margin-top: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .msg.risk .label { color: var(--risk); }
+  .msg.good .label { color: var(--accent); }
+  .arrow-wrap { position: relative; height: 0; border-top: 1px solid #818b8f; }
+  .arrow-wrap.dashed { border-top-style: dashed; }
+  .arrow-wrap::after { content: ""; position: absolute; top: -4px; width: 0; height: 0; border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+  .arrow-wrap.fwd::after { right: -1px; border-left: 6px solid #818b8f; }
+  .arrow-wrap.rev::after { left: -1px; border-right: 6px solid #818b8f; }
+  .w50 { width: 50%; }
+  .w67 { width: 66.6667%; }
+  .alt-frame { grid-column: 1 / 6; position: relative; display: grid; grid-template-columns: repeat(5, 1fr); row-gap: 24px; border: 1px solid var(--line); border-radius: 4px; background: var(--canvas); padding: 26px 0 20px; }
+  .alt-tag { position: absolute; top: -1px; left: -1px; background: var(--ink); color: #fff; font-size: 9px; font-weight: 700; letter-spacing: .05em; padding: 3px 8px; border-radius: 0 0 4px 0; }
+  .partition-label { grid-column: 1 / 6; padding: 0 18px; font-size: 11px; font-weight: 700; }
+  .partition-label.fail { color: var(--risk); }
+  .partition-divider { grid-column: 1 / 6; display: flex; align-items: center; gap: 12px; padding: 0 18px; }
+  .partition-divider .line { flex: 1; height: 0; border-top: 1px dashed #b7bfc2; }
+  .partition-divider .tag { font-size: 11px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+  /* ---- Screen 3: concurrency ---- */
+  .scenario-title { font-size: 22px; margin: 6px 0 10px; }
+  .scenario-lead { font-size: 14px; color: var(--muted); max-width: 680px; margin-bottom: 30px; }
+  .thread-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 32px; }
+  .thread-card { border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 4px; padding: 14px 12px; }
+  .thread-card.good { border-left-color: var(--accent); background: var(--accent-soft); }
+  .thread-card.risk { border-left-color: var(--risk); background: var(--risk-soft); }
+  .thread-card .name { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .thread-card .status { font-size: 11px; font-weight: 650; }
+  .thread-card.good .status { color: var(--accent); }
+  .thread-card.risk .status { color: var(--risk); }
+  .thread-card .reason { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+  .result-line { margin-top: 18px; font-size: 13px; color: var(--ink); padding-top: 16px; border-top: 1px solid var(--line); }
+  .result-line strong { color: var(--accent); }
+
+  /* ---- Screen 4: code ---- */
+  .code-heading { font-size: 22px; margin: 6px 0 12px; }
+  .code-lead { font-size: 15px; font-weight: 600; color: var(--ink); max-width: 700px; margin-bottom: 26px; line-height: 1.6; }
+  .code-title { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
+  .code-title span:first-child { color: var(--ink); font-weight: 650; font-size: 12px; }
+  .code-title span:last-child { color: var(--muted); font-size: 11px; }
+  pre { margin: 0; padding: 20px; background: #f4f6f8; border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; font: 12.5px/1.85 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .code-note { font-size: 13px; color: var(--muted); margin-top: 16px; line-height: 1.6; }
+  .code-note code { color: var(--accent); background: var(--canvas); padding: 1px 4px; border-radius: 3px; font-size: .95em; }
+</style>
+</head>
+<body>
+
+<header class="project-intro wrap">
+  <p class="eyebrow">재고 차감 프로세스 / Redis · Redisson</p>
+  <h1>분산 락 &amp; 트랜잭션 플로우</h1>
+  <p class="project-subtitle">tryLock(wait 3s, lease 5s) 기반 재고 차감 요청이 락 획득 성공/실패에 따라 어떻게 갈라지는지, 그리고 트랜잭션 커밋과 락 해제 순서를 어떻게 지켰는지 정리했다.</p>
+  <div class="meta-row">
+    <div class="meta-cell"><div class="label">대기 시간 (waitTime)</div><div class="value">최대 3초</div></div>
+    <div class="meta-cell"><div class="label">임대 시간 (leaseTime)</div><div class="value">자동 해제 5초</div></div>
+    <div class="meta-cell"><div class="label">락 해제 시점</div><div class="value">커밋 완료 이후</div></div>
+    <div class="meta-cell"><div class="label">타임아웃 시 동작</div><div class="value">즉시 실패 (Fast Fail)</div></div>
+  </div>
+</header>
+
+<nav class="case-nav" aria-label="플로우 화면">
+  <div class="wrap">
+    <button type="button" class="tab-btn" data-tab="flow" aria-current="true">01 <span>플로우차트</span></button>
+    <button type="button" class="tab-btn" data-tab="sequence">02 <span>시퀀스 다이어그램</span></button>
+    <button type="button" class="tab-btn" data-tab="concurrency">03 <span>동시성 시뮬레이터</span></button>
+    <button type="button" class="tab-btn" data-tab="code">04 <span>구현 코드</span></button>
+  </div>
+</nav>
+
+<div class="wrap case-content">
+
+  <!-- Screen 1: Flowchart -->
+  <section id="tab-flow" class="tab-view">
+    <figure class="structure">
+      <figcaption>요청 진입부터 응답까지 — 락 획득 성공 / 실패 분기</figcaption>
+      <div class="flow-body">
+        <div class="node">
+          요청 진입
+          <small>POST /api/v1/orders/issue</small>
+        </div>
+        <div class="down" aria-hidden="true">↓</div>
+
+        <div class="node">
+          분산 락 시도 (tryLock)
+          <small><code>redis.tryLock("stock:lock:101", 3s, 5s)</code></small>
+        </div>
+        <div class="down" aria-hidden="true">↓</div>
+
+        <div class="node decision">3초 이내에 락을 획득했는가?</div>
+        <div class="down" aria-hidden="true">↓</div>
+
+        <div class="split">
+          <div class="branch branch-col-fail">
+            <span class="branch-label fail">실패 · 3초 초과 (Timeout)</span>
+            <div class="down" aria-hidden="true">↓</div>
+            <div class="node risk">
+              즉시 실패 응답
+              <small>HTTP 409 Conflict · LOCK_TIMEOUT</small>
+            </div>
+          </div>
+
+          <div class="branch branch-col-ok">
+            <span class="branch-label ok">성공 · 락 획득</span>
+            <div class="down" aria-hidden="true">↓</div>
+
+            <div class="scope">
+              <span class="scope-label">@Transactional(REQUIRES_NEW)</span>
+              <div class="sub-steps">
+                <div class="sub-step"><span class="n">①</span> 재고 수량 조회</div>
+                <div class="sub-step"><span class="n">②</span> 재고 차감</div>
+                <div class="sub-step"><span class="n">③</span> 쿠폰 · 상품 발급</div>
+              </div>
+            </div>
+            <div class="down" aria-hidden="true">↓</div>
+
+            <div class="node">
+              DB 트랜잭션 커밋
+              <small>Connection.commit() 완료</small>
+            </div>
+            <div class="down" aria-hidden="true">↓</div>
+
+            <div class="node">
+              락 해제
+              <small>lock.unlock() — finally 블록</small>
+            </div>
+            <div class="down" aria-hidden="true">↓</div>
+
+            <div class="node good">
+              성공 응답 (200 OK)
+              <small>remainingStock 반환</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <section class="principle">
+      <div class="section-label">핵심 원칙</div>
+      <p class="decision-lead">락 해제는 반드시 DB 트랜잭션 커밋이 끝난 뒤, finally 블록에서 이루어져야 한다.</p>
+      <ul class="decision-list">
+        <li><strong>문제:</strong> <code>@Transactional</code> 메서드 안에서 <code>tryLock()</code>과 <code>unlock()</code>을 직접 실행하면, 락이 풀린 직후 아직 커밋되지 않은 짧은 순간 다른 스레드가 변경 전 데이터를 읽는 문제가 생긴다.</li>
+        <li><strong>해결:</strong> Facade가 락의 획득·해제 경계를 갖고, Service는 <code>Propagation.REQUIRES_NEW</code>로 별도 트랜잭션 경계를 가져 — 커밋이 끝난 뒤에만 락이 풀리도록 순서를 강제한다.</li>
+      </ul>
+    </section>
+
+    <div class="param-grid">
+      <div>
+        <h3>waitTime · 3초</h3>
+        <p>락을 얻기 위해 대기하는 최대 시간. 이전 트랜잭션이 3초 안에 끝나 락이 풀리면 즉시 획득하고, 지나면 예외를 던져 과부하를 막는다.</p>
+      </div>
+      <div>
+        <h3>leaseTime · 5초</h3>
+        <p>락을 획득한 뒤 보유할 수 있는 최대 시간. 장애로 unlock()이 호출되지 않아도 5초 뒤 Redis가 자동으로 락을 삭제해 데드락을 막는다.</p>
+      </div>
+      <div>
+        <h3>REQUIRES_NEW</h3>
+        <p>Facade의 락 범위와 Service의 트랜잭션 범위를 분리하는 전파 옵션. 락이 풀리기 전에 커밋이 끝나도록 순서를 보장한다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen 2: Sequence diagram -->
+  <section id="tab-sequence" class="tab-view" hidden>
+    <figure class="structure">
+      <figcaption>Client · Facade · Redis · Stock Service · RDB — 5개 액터 간 상호작용</figcaption>
+      <div class="seq-body">
+        <div class="sequence">
+          <div class="actors">
+            <div class="actor"><div class="name">Client</div><div class="role">호출자</div></div>
+            <div class="actor"><div class="name">Facade</div><div class="role">락 경계</div></div>
+            <div class="actor"><div class="name">Redis</div><div class="role">Redisson</div></div>
+            <div class="actor"><div class="name">Stock Service</div><div class="role">트랜잭션 경계</div></div>
+            <div class="actor"><div class="name">RDB</div><div class="role">MySQL</div></div>
+          </div>
+
+          <div class="lifelines">
+            <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+          </div>
+
+          <div class="messages">
+            <div class="msg" style="grid-column:1 / 3; grid-row:1;">
+              <div class="label"><strong>①</strong> 요청 전달<small>POST /stock/deduct</small></div>
+              <div class="arrow-wrap fwd w50"></div>
+            </div>
+
+            <div class="msg" style="grid-column:2 / 4; grid-row:2;">
+              <div class="label"><strong>②</strong> tryLock 시도<small>tryLock("stock:1", wait 3s, lease 5s)</small></div>
+              <div class="arrow-wrap fwd w50"></div>
+            </div>
+
+            <div class="alt-frame" style="grid-row:3;">
+              <span class="alt-tag">ALT</span>
+
+              <div class="partition-label fail" style="grid-row:1;">[ 3초 초과 · Timeout ]</div>
+
+              <div class="msg risk" style="grid-column:2 / 4; grid-row:2;">
+                <div class="label">tryLock 실패 반환</div>
+                <div class="arrow-wrap dashed rev w50"></div>
+              </div>
+              <div class="msg risk" style="grid-column:1 / 3; grid-row:3;">
+                <div class="label">실패 응답<small>HTTP 409 Conflict · LOCK_TIMEOUT</small></div>
+                <div class="arrow-wrap rev w50"></div>
+              </div>
+
+              <div class="partition-divider" style="grid-row:4;"><span class="line"></span><span class="tag">락 획득 성공</span><span class="line"></span></div>
+
+              <div class="msg good" style="grid-column:2 / 4; grid-row:5;">
+                <div class="label">락 획득 성공 (OK)</div>
+                <div class="arrow-wrap rev w50"></div>
+              </div>
+              <div class="msg" style="grid-column:2 / 5; grid-row:6;">
+                <div class="label"><strong>③</strong> deductStock() 호출</div>
+                <div class="arrow-wrap fwd w67"></div>
+              </div>
+              <div class="msg" style="grid-column:4 / 6; grid-row:7;">
+                <div class="label">BEGIN TRANSACTION</div>
+                <div class="arrow-wrap fwd w50"></div>
+              </div>
+              <div class="msg" style="grid-column:4 / 6; grid-row:8;">
+                <div class="label">재고 확인 · 차감<small>SELECT &amp; UPDATE stock = stock - 1</small></div>
+                <div class="arrow-wrap fwd w50"></div>
+              </div>
+              <div class="msg good" style="grid-column:4 / 6; grid-row:9;">
+                <div class="label"><strong>④</strong> COMMIT</div>
+                <div class="arrow-wrap fwd w50"></div>
+              </div>
+              <div class="msg" style="grid-column:2 / 4; grid-row:10;">
+                <div class="label"><strong>⑤</strong> 락 해제<small>lock.unlock() — finally 블록</small></div>
+                <div class="arrow-wrap fwd w50"></div>
+              </div>
+              <div class="msg good" style="grid-column:1 / 3; grid-row:11;">
+                <div class="label">200 OK</div>
+                <div class="arrow-wrap rev w50"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <section style="margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line);">
+      <div class="section-label">읽는 법</div>
+      <p style="font-size: 14px; color: var(--muted); max-width: 720px; line-height: 1.7;">
+        점선 화살표는 성공/실패 여부를 알리는 반환 흐름이다. <strong style="color:var(--ink);">ALT 박스</strong>는 tryLock 결과에 따라 갈라지는 두 경로를 보여준다 — 위 칸은 3초 초과로 즉시 실패하는 경로, 아래 칸은 락을 획득해 트랜잭션을 완료하고 락을 해제하는 경로다. 락 해제(⑤)는 항상 커밋(④) 다음에 일어난다.
+      </p>
+    </section>
+  </section>
+
+  <!-- Screen 3: Concurrency -->
+  <section id="tab-concurrency" class="tab-view" hidden>
+    <div class="section-label">동시성 시뮬레이션</div>
+    <h2 class="scenario-title">재고 1개에 5개 스레드가 동시에 요청하면</h2>
+    <p class="scenario-lead">재고가 1개 남은 상품에 5개의 스레드가 동시에 tryLock(wait 3s)을 시도한 결과. 정확히 1개만 차감되고 나머지 4건은 안전하게 차단된다.</p>
+
+    <div class="thread-grid">
+      <div class="thread-card good">
+        <div class="name">Thread-1</div>
+        <div class="status">성공 · 200 OK</div>
+        <div class="reason">재고 확인(1개) → 차감 → 커밋</div>
+      </div>
+      <div class="thread-card risk">
+        <div class="name">Thread-2</div>
+        <div class="status">실패 · 400 Bad Request</div>
+        <div class="reason">락 획득 후 재고 0개 확인</div>
+      </div>
+      <div class="thread-card risk">
+        <div class="name">Thread-3</div>
+        <div class="status">실패 · 409 Conflict</div>
+        <div class="reason">tryLock 3초 타임아웃</div>
+      </div>
+      <div class="thread-card risk">
+        <div class="name">Thread-4</div>
+        <div class="status">실패 · 409 Conflict</div>
+        <div class="reason">tryLock 3초 타임아웃</div>
+      </div>
+      <div class="thread-card risk">
+        <div class="name">Thread-5</div>
+        <div class="status">실패 · 409 Conflict</div>
+        <div class="reason">tryLock 3초 타임아웃</div>
+      </div>
+    </div>
+
+    <div class="code-title"><span>실행 로그</span><span>Execution Trace</span></div>
+    <pre><code>t+0ms      5개 스레드가 동시에 재고 차감 요청 시작
+t+0ms      Thread-1 ~ Thread-5, tryLock("stock:1", wait 3s) 대기 진입
+t+600ms    Thread-1, 락 획득 → 재고 확인(1개) → 차감 실행
+t+1400ms   Thread-1, 커밋 완료 → 락 해제 → 200 OK (잔여 재고 0개)
+t+1800ms   Thread-2, 락 획득 → 재고 확인(0개) → 재고 부족 예외
+t+2600ms   Thread-2, 락 해제 → 400 Bad Request
+t+3000ms   Thread-3, Thread-4, Thread-5, tryLock 3초 대기 시간 초과 → 409 Conflict</code></pre>
+
+    <p class="result-line">결과 — 동시성 제어로 <strong>정확히 1개만 차감</strong>되고, 나머지 4건의 요청은 안전하게 차단됐다.</p>
+  </section>
+
+  <!-- Screen 4: Code -->
+  <section id="tab-code" class="tab-view" hidden>
+    <div class="section-label">구현 코드</div>
+    <h2 class="code-heading">StockRedissonFacade &amp; StockService</h2>
+    <p class="code-lead">락 획득·해제는 Facade가, 트랜잭션 경계는 Service가 나눠 가져 — 커밋이 끝난 뒤에만 락이 풀리도록 강제한다.</p>
+
+    <div class="code-title"><span>StockRedissonFacade.java · StockService.java</span><span>Java</span></div>
+    <pre><code>// 1. Redisson Facade 클래스 (락 경계 설정 - @Transactional 없음)
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class StockRedissonFacade {
+
+    private final RedissonClient redissonClient;
+    private final StockService stockService;
+
+    public void deductStock(Long stockId, Long quantity) {
+        RLock lock = redissonClient.getLock("stock:lock:" + stockId);
+
+        try {
+            // tryLock(대기 3초, 임대 5초) - 실패 시 false 반환 (Fast Fail)
+            boolean available = lock.tryLock(3, 5, TimeUnit.SECONDS);
+
+            if (!available) {
+                log.warn("락 획득 타임아웃 발생 - StockId: {}", stockId);
+                throw new CustomException(ErrorCode.LOCK_ACQUISITION_TIMEOUT);
+            }
+
+            // 락 획득 성공 후, 별도 트랜잭션 서비스를 호출해 재고확인·차감·커밋 수행
+            stockService.deductStockWithTransaction(stockId, quantity);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        } finally {
+            // DB 트랜잭션이 완전히 커밋된 후 finally 블록에서 안전하게 락 해제
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+                log.info("분산 락 해제 완료 - StockId: {}", stockId);
+            }
+        }
+    }
+}
+
+// 2. 비즈니스 트랜잭션 서비스 (REQUIRES_NEW 트랜잭션 분리)
+@Service
+@RequiredArgsConstructor
+public class StockService {
+
+    private final StockRepository stockRepository;
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deductStockWithTransaction(Long stockId, Long quantity) {
+        Stock stock = stockRepository.findById(stockId)
+                .orElseThrow(() -> new CustomException(ErrorCode.STOCK_NOT_FOUND));
+
+        stock.deduct(quantity);
+        // 메서드 종료 시점에 Spring AOP가 DB COMMIT 수행
+    }
+}</code></pre>
+
+    <p class="code-note">finally 블록에서 <code>lock.isHeldByCurrentThread()</code>를 확인한 뒤 <code>unlock()</code>을 호출한다 — <code>Propagation.REQUIRES_NEW</code> 트랜잭션의 커밋이 끝난 뒤에만 락이 풀린다.</p>
+
+    <div class="param-grid">
+      <div>
+        <h3>waitTime · 3초</h3>
+        <p>락을 얻기 위해 대기하는 최대 시간. 이전 트랜잭션이 3초 안에 끝나 락이 풀리면 즉시 획득하고, 지나면 예외를 던져 과부하를 막는다.</p>
+      </div>
+      <div>
+        <h3>leaseTime · 5초</h3>
+        <p>락을 획득한 뒤 보유할 수 있는 최대 시간. 장애로 unlock()이 호출되지 않아도 5초 뒤 Redis가 자동으로 락을 삭제해 데드락을 막는다.</p>
+      </div>
+      <div>
+        <h3>REQUIRES_NEW</h3>
+        <p>Facade의 락 범위와 Service의 트랜잭션 범위를 분리하는 전파 옵션. 락이 풀리기 전에 커밋이 끝나도록 순서를 보장한다.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-btn').forEach(function (b) { b.removeAttribute('aria-current'); });
+      btn.setAttribute('aria-current', 'true');
+      var target = btn.getAttribute('data-tab');
+      document.querySelectorAll('.tab-view').forEach(function (view) {
+        view.hidden = view.id !== 'tab-' + target;
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
