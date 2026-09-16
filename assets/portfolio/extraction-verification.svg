@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560" role="img" aria-labelledby="title"><title id="title">AI 추출 데이터의 검증 흐름</title><rect width="1000" height="560" fill="#f7f8f9"/>
+<g font-family="-apple-system, BlinkMacSystemFont, sans-serif" text-anchor="middle">
+<text x="500" y="60" font-size="26" font-weight="600" fill="#252a2c">AI 추출 데이터의 검증 흐름</text>
+<text x="260" y="115" font-size="20" fill="#22695c">자동 검사</text>
+<rect x="35" y="145" width="450" height="72" rx="5" fill="#edf5f1" stroke="#bacdc8"/><text x="260" y="189" font-size="22" fill="#252a2c">공시 원문 → AI 구조화</text>
+<text x="260" y="243" font-size="23" fill="#626b70">↓</text>
+<rect x="35" y="250" width="450" height="72" rx="5" fill="#edf5f1" stroke="#bacdc8"/><text x="260" y="294" font-size="22" fill="#252a2c">원문 근거 · 우대 합계 검사</text>
+<text x="260" y="348" font-size="23" fill="#626b70">↓</text>
+<rect x="35" y="355" width="450" height="72" rx="5" fill="#edf5f1" stroke="#bacdc8"/><text x="260" y="399" font-size="22" fill="#252a2c">검수 우선순위 표시</text>
+<text x="260" y="485" font-size="17" fill="#626b70">자동 검사는 의미 오류 전체를 탐지하지 못함</text>
+<text x="740" y="115" font-size="20" fill="#22695c">전량 검수와 빌드</text>
+<rect x="515" y="145" width="450" height="72" rx="5" fill="#edf5f1" stroke="#bacdc8"/><text x="740" y="189" font-size="22" fill="#252a2c">43개 상품 원문 대조</text>
+<text x="740" y="243" font-size="23" fill="#626b70">↓</text>
+<rect x="515" y="250" width="450" height="72" rx="5" fill="#edf5f1" stroke="#bacdc8"/><text x="740" y="294" font-size="22" fill="#252a2c">11개 상품 오류 수정</text>
+<text x="740" y="348" font-size="23" fill="#626b70">↓</text>
+<rect x="515" y="355" width="450" height="72" rx="5" fill="#edf5f1" stroke="#bacdc8"/><text x="740" y="399" font-size="22" fill="#252a2c">미검수 상품이 있으면 빌드 실패</text>
+<text x="740" y="485" font-size="17" fill="#626b70">최종 검수 표시 43/43 · 원문 근거 일치 105/105</text>
+</g></svg>

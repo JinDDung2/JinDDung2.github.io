@@ -3,10 +3,14 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>{{ site.name }} | {{ site.title }}</title>
+  <title>{{ site.name }} | {{ page.title | default: site.title }}</title>
   {%- seo title=false -%}
 
+  {% if include.portfolio %}
+  <link rel="stylesheet" href="{{ '/assets/portfolio.css' | relative_url }}">
+  {% else %}
   <link rel="stylesheet" href="{{ '/assets/main.css' | relative_url }}">
+  {% endif %}
   <link rel="shortcut icon" type="image/x-icon" href="{{ site.favicon | default: '/assets/favicon.ico' | relative_url }}">
 
   {%- if jekyll.environment == 'production' and site.google_analytics -%}

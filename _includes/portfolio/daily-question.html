@@ -1,0 +1,18 @@
+<figure class="structure" data-diagram="daily-question">
+  <figcaption>발급 판단의 보호 범위 · 동일 사용자 기준</figcaption>
+  <div class="diagram-grid">
+    <div class="diagram-side before">
+      <div class="diagram-label">BEFORE <span>두 요청이 같은 빈 이력을 조회</span></div>
+      <div class="flow"><div class="node">요청 A</div><span class="arrow" aria-hidden="true">→</span><div class="node">오늘 이력 없음</div><span class="arrow" aria-hidden="true">→</span><div class="node risk">신규 발급</div></div>
+      <div class="flow"><div class="node">요청 B</div><span class="arrow" aria-hidden="true">→</span><div class="node">오늘 이력 없음</div><span class="arrow" aria-hidden="true">→</span><div class="node risk">신규 발급</div></div>
+      <p class="flow-caption">조회와 저장 사이에 <strong>같은 판단이 중복 실행</strong></p>
+    </div>
+    <div class="diagram-side after">
+      <div class="diagram-label">AFTER <span>사용자별 MySQL Named Lock</span></div>
+      <div class="flow"><div class="node good">락 획득<small>다음 요청은 대기</small></div><span class="arrow" aria-hidden="true">→</span><div class="node">트랜잭션 시작</div></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="scope"><span class="scope-label">조회 → 판단 → 저장을 하나의 임계구역으로</span><div class="flow"><div class="node">최신 이력 재조회</div><span class="arrow" aria-hidden="true">→</span><div class="node good">기존 반환 / 신규 발급</div></div></div>
+      <p class="flow-caption"><strong>Commit 이후 락 해제</strong> → 다음 요청 진입</p>
+    </div>
+  </div>
+</figure>

@@ -1,0 +1,123 @@
+---
+layout: case
+title: My Rate | AI 추출 검증과 개인별 세후 이자 계산
+permalink: /portfolio/my-rate/
+project: my-rate
+---
+<aside class="limits" aria-labelledby="ai-development-title">
+  <h3 id="ai-development-title">개발 방식</h3>
+  <p>Codex·Claude를 활용해 코드 작성과 검증 작업을 진행한 프로젝트입니다. TypeScript·Next.js·React는 프로젝트의 구현 환경이며, 아래 코드는 AI 도구를 활용한 구현 결과입니다. 사례의 수치와 오류 수정 내역은 저장소의 작업 기록 및 재실행 결과를 기준으로 정리했습니다.</p>
+</aside>
+<section class="experience" id="extraction-verification" aria-labelledby="extraction-title">
+  <header class="experience-heading">
+    <p class="eyebrow">01 / DATA VALIDATION · TypeScript, Claude API</p>
+    <h2 id="extraction-title">AI 추출 결과를 검증 가능한 상품 데이터로</h2>
+    <p class="problem"><strong>문제</strong>AI가 원문을 정확히 인용해도, 상호배타 조건을 중복 합산하거나 다른 의미의 조건 코드를 배정할 수 있었습니다.</p>
+  </header>
+  {% include portfolio/extraction-verification.html %}
+  <div class="analysis-grid">
+    <div>
+      <h3 class="section-label">판단 근거</h3>
+      <p class="decision-lead">원문 근거가 있다는 사실만으로<br>추출한 조건의 의미까지 맞지는 않았습니다.</p>
+      <ul class="decision-list">
+        <li><strong>근거 검사:</strong> 공백을 정규화한 뒤 원문에 없는 인용을 폐기합니다.</li>
+        <li><strong>검수 우선순위:</strong> 조건별 우대율 합계가 대표 옵션의 우대폭을 넘으면 검수 대상으로 표시합니다. 작업 기록에는 자동 검사를 통과한 상품을 포함한 전량 대조 결과가 남아 있습니다.</li>
+        <li><strong>빌드 차단:</strong> 데이터를 조립할 때 <code>reviewed: false</code>로 시작하고, 검수 완료 표시가 없는 상품이 있으면 <code>next build</code> 실행 전에 실패하는 구조입니다.</li>
+        <li><strong>실행 경로 분리:</strong> Claude API는 배치 추출에 사용합니다. 사용자 계산은 검수된 JSON으로 수행하며 런타임 LLM 호출에 의존하지 않습니다.</li>
+      </ul>
+      <details>
+        <summary>자동 표시 7건과 실제 오류 11건이 다른 이유</summary>
+        <p>자동 표시 7건 중 2건은 원문 자체가 여러 조건 중 일부를 선택하는 구조인 정상 상품이었습니다. 실제 오류 11건 중 5건만 합계 검사로 잡혔고, 나머지 6건은 불명확한 우대율 추정이나 조건 코드 오배정 등 산술 검사로 탐지할 수 없는 오류였습니다.</p>
+        <p>작업 기록에서는 자동 표시 건수와 실제 오류 건수를 구분합니다. 원문 대조 결과를 기준으로 11개 상품의 추출 결과가 수정됐습니다.</p>
+      </details>
+    </div>
+    <div>
+      <div class="code-title"><h3 class="section-label">핵심 코드</h3><span>TypeScript · 핵심 발췌</span></div>
+{% highlight typescript %}
+const sumRateBp = conditions.reduce(
+  (acc, c) => acc + c.rateBp, 0
+);
+const overGap = sumRateBp > gapBp;
+const result = overGap
+  ? conditions.map(c => ({ ...c, confidence: 'low' as const }))
+  : conditions;
+{% endhighlight %}
+{% highlight typescript %}
+const unreviewed = data.products.filter(p => !p.reviewed);
+if (unreviewed.length > 0) {
+  // 검수 미완료 상품이 있으면 빌드 중단
+  process.exit(1);
+}
+{% endhighlight %}
+      <p class="code-note"><code>scripts/lib/pipeline.ts</code>와 <code>scripts/check-reviewed.ts</code>의 핵심 로직입니다. 빌드 명령은 <code>npm run check:reviewed &amp;&amp; next build</code>로 연결돼 있습니다.</p>
+    </div>
+  </div>
+  <div class="verification">
+    <h3 class="section-label">검증 결과</h3>
+    <div class="metrics">
+      <div class="metric"><strong>11 / 43</strong><span>원문 대조에서 오류가 확인돼 수정한 상품</span></div>
+      <div class="metric"><strong>43 / 43</strong><span>최종 데이터의 검수 완료 표시</span></div>
+      <div class="metric"><strong>105 / 105</strong><span>원문과 인용 근거가 일치하는 조건</span></div>
+    </div>
+    <p>오류 발견·수정은 2026-09-03 작업 기록 기준입니다. 2026-09-15 포트폴리오 작성 과정에서 Codex가 202608 기준월 JSON의 검수 표시와 공백 정규화 후 원문 인용 일치를 재확인한 결과입니다. 인용 일치가 의미 정확도 100%를 뜻하지는 않습니다.</p>
+    <p><a href="https://github.com/JinDDung2/my-rate/blob/main/docs/knowledge/extraction-verification.md" target="_blank" rel="noopener noreferrer">검증 지표와 오류 유형 기록 ↗</a></p>
+  </div>
+  <aside class="limits"><h3>한계 · 다음 단계</h3><p>검수 플래그는 완료 표시를 검사하며, 검수 품질 자체를 보장하지 않습니다. 조건이 상품 단위라 만기별 차등 우대율을 완전히 표현하지 못하고, 상호배타 관계도 별도 모델로 관리하지 않습니다. 조건×만기와 배타 관계를 모델링하고, 프롬프트 수정 효과는 새 배치로 재검증해야 합니다.</p></aside>
+</section>
+
+<section class="experience" id="personal-interest" aria-labelledby="interest-title">
+  <header class="experience-heading">
+    <p class="eyebrow">02 / CALCULATION · TypeScript, React</p>
+    <h2 id="interest-title">개인별 적용금리와 세후 이자의 계산 규칙 보장</h2>
+    <p class="problem"><strong>문제</strong>광고 최고금리에는 사용자가 충족하지 못한 조건까지 포함돼, 실제 받을 이자 기준의 순위와 차이가 발생했습니다.</p>
+  </header>
+  {% include portfolio/personal-interest.html %}
+  <div class="analysis-grid">
+    <div>
+      <h3 class="section-label">판단 근거</h3>
+      <p class="decision-lead">충족한 조건으로 금리를 계산하고,<br>같은 납입 조건의 세후 이자로 비교했습니다.</p>
+      <ul class="decision-list">
+        <li><strong>금리 합산:</strong> 1bp = 0.01%p의 정수 단위를 사용하고, 기본금리와 공시 최고금리 사이로 결과를 제한합니다.</li>
+        <li><strong>불확실성 처리:</strong> <code>OTHER</code>·0bp 조건과 미해석 우대폭은 개인별 금리에 더하지 않고, 원문과 미해석 우대폭을 화면에 표시합니다.</li>
+        <li><strong>계산 분리:</strong> 적용금리·단리 및 월복리 이자·순위 로직을 순수 함수로 분리한 구조입니다. 세전 이자를 한 번 반올림한 뒤 세금을 절사하고 세후 이자를 구합니다.</li>
+        <li><strong>재현 가능한 순서:</strong> 세후 이자 → 기본금리 → 상품 코드 순으로 동률을 처리하고, 입력 조건을 공유 URL로 복원합니다.</li>
+      </ul>
+      <details>
+        <summary>추가 조건의 효과도 같은 계산기로 검증</summary>
+        <p>미충족 조건을 하나씩 추가한 세후 이자와 현재 이자의 차이를 구해, 증가액 상위 3개를 제시합니다. 이미 최고금리에 도달해 추가 이자가 없는 조건은 제외합니다. 각 증가액은 현재 상태에서 해당 조건 하나만 추가한 값이며, 여러 추천의 합산 효과를 의미하지 않습니다.</p>
+      </details>
+    </div>
+    <div>
+      <div class="code-title"><h3 class="section-label">핵심 코드</h3><span>TypeScript · 핵심 발췌</span></div>
+{% highlight typescript %}
+const baseRateBp = toBp(option.baseRate);
+const maxRateBp = toBp(option.maxRate);
+const appliedBp = applied.reduce(
+  (sum, condition) => sum + condition.rateBp, 0
+);
+const unclampedRateBp = baseRateBp + appliedBp;
+const myRateBp = Math.max(
+  baseRateBp, Math.min(unclampedRateBp, maxRateBp)
+);
+{% endhighlight %}
+{% highlight typescript %}
+const pretaxInterest = Math.round(rawPretaxInterest);
+const tax = Math.floor(pretaxInterest * TAX_RATE);
+const afterTaxInterest = pretaxInterest - tax;
+{% endhighlight %}
+      <p class="code-note"><code>lib/my-rate.ts</code>와 <code>lib/interest.ts</code> 발췌. 이자 계산 경계에서 <code>myRateBp / 10000</code>으로 연이율을 변환합니다. 이자 계산은 부동소수점 기반이며, 정수 bp는 금리 합산에 적용했습니다.</p>
+    </div>
+  </div>
+  <div class="verification">
+    <h3 class="section-label">검증 결과</h3>
+    <div class="metrics">
+      <div class="metric"><strong>66 / 66</strong><span>계산·순위·UI·공유 URL 테스트 통과</span></div>
+      <div class="metric"><strong>3.6%</strong><span>실데이터 예시의 개인별 1위 적용금리</span></div>
+      <div class="metric"><strong>98,982원</strong><span>해당 상품의 계산된 세후 이자</span></div>
+    </div>
+    <p>2026-09-15 포트폴리오 작성 과정에서 Codex가 <code>node --import tsx --test lib/**/*.test.ts</code>를 재실행한 결과입니다. 최고금리 상한, 미해석 우대 제외, 단리·월복리 고정 기대값, 조건 변경과 동률 정렬을 검증합니다.</p>
+    <p>예시는 202608 공시 데이터, 월 50만 원·12개월·정액적립·급여이체 선택 기준입니다. 광고 최고금리 1위 상품은 최고 4.1%지만 해당 조건의 적용금리는 2.2%여서 개인별 세후 이자 1위와 달랐습니다. 실제 가입·지급 실적은 아닙니다.</p>
+    <p><a href="https://github.com/JinDDung2/my-rate/blob/main/lib/ranking.test.ts" target="_blank" rel="noopener noreferrer">실데이터 순위 회귀 테스트 ↗</a></p>
+  </div>
+  <aside class="limits"><h3>한계 · 다음 단계</h3><p>월 단위 납입과 고정 세율 15.4%를 가정한 비교용 계산입니다. 자유적립도 매월 동일 금액을 납입한다고 가정하므로, 실제 납입일·은행별 일할 계산·개인별 과세 조건에 따른 지급액과 차이가 날 수 있습니다. 테스트 통과는 이 계산 모델의 동작을 검증한 결과입니다.</p></aside>
+</section>

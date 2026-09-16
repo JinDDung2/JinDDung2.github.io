@@ -1,0 +1,9 @@
+<section class="container certifications-container" aria-labelledby="certifications-title">
+  <h3 id="certifications-title">{{ site.certifications_title | default: "Certifications" }}</h3>
+  {% for certification in site.data.certifications %}
+    <div class="certification-item">
+      <h4>{{ certification.name }}</h4>
+      <p><time datetime="{{ certification.datetime }}">{{ certification.date }}</time> 취득</p>
+    </div>
+  {% endfor %}
+</section>

@@ -1,0 +1,133 @@
+---
+layout: case
+title: 개발 한 스푼 | 발급 동시성과 신고 알림 복구
+permalink: /portfolio/adevspoon/
+project: adevspoon
+---
+<section class="experience" id="daily-question" aria-labelledby="daily-title">
+  <header class="experience-heading">
+    <p class="eyebrow">01 / CONCURRENCY · MySQL Named Lock, Spring AOP</p>
+    <h2 id="daily-title">하루 한 번의 발급을 지키는 동시성 제어</h2>
+    <p class="problem"><strong>문제</strong>동시 요청으로 사용자별 하루 1회 질문 발급 정책이 깨질 수 있었습니다.</p>
+  </header>
+  {% include portfolio/daily-question.html %}
+  <div class="analysis-grid">
+    <div>
+      <h3 class="section-label">판단 근거</h3>
+      <p class="decision-lead">발급 여부를 판단하는 전체 과정이<br>사용자 단위 임계구역이었습니다.</p>
+      <ul class="decision-list">
+        <li><strong>보호 범위:</strong> 질문 선택, 발급 이력 저장, 발급 카운트 증가까지 함께 보호해야 했습니다.</li>
+        <li><strong>락 범위:</strong> 같은 사용자만 순차 처리하는 Named Lock을 선택해 다른 사용자의 발급은 분리했습니다.</li>
+        <li><strong>실행 순서:</strong> Lock AOP가 트랜잭션보다 먼저 실행되도록 설정하고, 락 획득 후 최신 이력을 다시 조회했습니다.</li>
+      </ul>
+      <details>
+        <summary>Serializable · 비관적 락 · UNIQUE를 비교한 이유</summary>
+        <table>
+          <thead><tr><th scope="col">선택지</th><th scope="col">이 요구에서의 판단</th></tr></thead>
+          <tbody>
+            <tr><td>Serializable</td><td>격리 수준을 높이면 경합과 재시도 비용까지 고려해야 합니다.</td></tr>
+            <tr><td>비관적 락</td><td>미발급 이력은 잠글 행이 없습니다. 사용자 행을 잠그는 대안은 가능하지만 관련 작업의 경합 범위도 검토해야 합니다.</td></tr>
+            <tr><td>UNIQUE</td><td>중복 저장의 최종 방어선입니다. 발급 판단 전체를 순차 처리하는 역할은 별도로 필요했습니다.</td></tr>
+            <tr><td>Named Lock · 선택</td><td>발급 이력 유무와 관계없이 사용자 키로 전체 흐름을 보호할 수 있었습니다.</td></tr>
+          </tbody>
+        </table>
+      </details>
+    </div>
+    <div>
+      <div class="code-title"><h3 class="section-label">핵심 코드</h3><span>Kotlin · 핵심 발췌</span></div>
+{% highlight kotlin %}
+// @Order(1)인 DistributedLockAdvisor의 메서드
+fun atTarget(joinPoint: ProceedingJoinPoint): Any? {
+    val lockAnnotation = getAnnotation(joinPoint)
+    val lockKeyList = getLockKeyList(joinPoint.args, lockAnnotation.keyClass)
+    return lockRepository.withAllLock(lockKeyList) {
+        joinPoint.proceed()
+    }
+}
+
+@Transactional
+@DistributedLock(keyClass = [GetTodayQuestion::class])
+fun getOrCreateTodayQuestion(request: GetTodayQuestion): QuestionInfo {
+    val user = getMember(request.memberId)
+    val latestIssuedQuestion = questionOpenRepository.findLatestWithQuestionAndAnswer(user)
+    val isTodayQuestion = latestIssuedQuestion?.openDate?.isToday() ?: false
+    return if (isTodayQuestion) makeQuestionInfo(latestIssuedQuestion!!)
+    else questionOpenDomainService.issueQuestion(request.memberId, request.today)
+}
+{% endhighlight %}
+      <p class="code-note">Advisor와 서비스의 핵심 부분 발췌. Advisor의 @Around는 생략했습니다. 트랜잭션 AOP 순서는 LOWEST_PRECEDENCE - 10으로 설정했습니다.</p>
+    </div>
+  </div>
+  <div class="verification">
+    <h3 class="section-label">검증 결과</h3>
+    <div class="metrics">
+      <div class="metric"><strong>3개</strong><span>동일 사용자의 동시 요청</span></div>
+      <div class="metric"><strong>동일 ID</strong><span>세 요청의 질문 반환값</span></div>
+      <div class="metric"><strong>이력 재사용</strong><span>후속 요청의 처리 방식</span></div>
+    </div>
+    <p>멀티스레드 통합 테스트에서 반환된 질문 ID를 비교했습니다. 검증 범위는 같은 사용자의 동시 발급 시나리오입니다.</p>
+  </div>
+  <aside class="limits"><h3>한계 · 다음 단계</h3><p>DB Failover나 락 연결 단절은 별도 장애 시나리오입니다. 사용자·날짜 기준 UNIQUE 제약을 추가하고, 락 연결 단절 시에도 중복 이력이 남지 않는지 검증해야 합니다.</p></aside>
+</section>
+
+<section class="experience" id="report-notification" aria-labelledby="report-title">
+  <header class="experience-heading">
+    <p class="eyebrow">02 / RELIABILITY · Transactional Event, Outbox, Scheduler</p>
+    <h2 id="report-title">누락된 신고 알림을 복구 가능한 작업으로</h2>
+    <p class="problem"><strong>문제</strong>운영 중 신고 데이터는 저장됐지만 Slack 알림이 누락되는 사례가 발생했습니다.</p>
+  </header>
+  {% include portfolio/report-notification.html %}
+  <div class="analysis-grid">
+    <div>
+      <h3 class="section-label">판단 근거</h3>
+      <p class="decision-lead">신고 저장과 Slack 전송은<br>성공 기준이 다른 작업이었습니다.</p>
+      <ul class="decision-list">
+        <li><strong>장애 범위 분리:</strong> 신고 커밋 이후 이벤트로 외부 호출을 옮겨 저장과 알림 실패가 서로 영향을 주지 않게 했습니다.</li>
+        <li><strong>재처리 근거 확보:</strong> 발송 상태·실패 사유·payload를 Outbox에 남겨 실패한 작업을 다시 찾을 수 있게 했습니다.</li>
+        <li><strong>상태 영속화:</strong> Outbox 생성과 상태 변경은 별도 서비스의 <code>REQUIRES_NEW</code> 트랜잭션으로 처리했습니다.</li>
+      </ul>
+      <details>
+        <summary>재처리 조건과 횟수 기준</summary>
+        <p>스케줄러는 1분 간격으로, 생성 후 5분이 지난 PENDING / FAILED 중 <code>retry_count &lt; 3</code>인 작업을 조회합니다. 현재 카운터는 최초 전송을 포함해 실패할 때 증가하므로, 실패 누적 3회가 되면 자동 재처리를 중단합니다.</p>
+      </details>
+    </div>
+    <div>
+      <div class="code-title"><h3 class="section-label">핵심 코드</h3><span>Kotlin · 발송 흐름 발췌</span></div>
+{% highlight kotlin %}
+@Async
+@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+fun sendReportAlarm(event: ReportEvent) {
+    val payload = event.toSpecificMap()
+    val outbox = reportOutboxService.createPending(
+        event.report, objectMapper.writeValueAsString(payload)
+    )
+    runCatching {
+        alarmAdapter.sendAlarm(AlarmType.REPORT, payload)
+    }.onSuccess {
+        reportOutboxService.markSuccess(outbox.id)
+    }.onFailure {
+        reportOutboxService.markFailed(outbox.id, failureReason(it))
+    }
+}
+{% endhighlight %}
+      <p class="code-note">바깥쪽 예외 로깅은 생략했습니다. 상태 변경 메서드는 별도 트랜잭션에서 커밋됩니다.</p>
+    </div>
+  </div>
+  <div class="verification">
+    <h3 class="section-label">검증 결과</h3>
+    <div class="metrics">
+      <div class="metric"><strong>FAILED</strong><span>Webhook 예외 발생 시 기록</span></div>
+      <div class="metric"><strong>SUCCESS</strong><span>스케줄러 재전송 성공 시 전환</span></div>
+      <div class="metric"><strong>3회 실패</strong><span>자동 재처리 중단 기준</span></div>
+    </div>
+    <figure class="outbox-example">
+      <figcaption>Outbox 상태 전환 예시 · 아래 두 행은 동일 작업의 실패 후 복구를 표현합니다.</figcaption>
+      <table>
+        <thead><tr><th scope="col">status</th><th scope="col">retry_count</th><th scope="col">failure_reason</th></tr></thead>
+        <tbody><tr><td class="status-failed">FAILED</td><td>1</td><td>Webhook Timeout</td></tr><tr><td class="status-success">SUCCESS</td><td>1</td><td>—</td></tr></tbody>
+      </table>
+    </figure>
+    <p>Mock 기반 단위 테스트로 발송 성공·실패, 재처리 상태 전환과 조회 조건을 확인했습니다. 실제 DB 커밋 경계 및 프로세스 종료 복구는 별도 통합 검증 대상입니다.</p>
+  </div>
+  <aside class="limits"><h3>한계 · 다음 단계</h3><p>현재 Outbox는 신고 커밋 이후 생성됩니다. 그 사이 프로세스가 종료되면 작업 자체가 기록되지 않을 수 있어, 신고와 Outbox를 같은 트랜잭션에 저장하는 보완이 필요합니다. 전송 성공 후 상태 기록이 실패하면 알림이 중복될 가능성도 남습니다.</p></aside>
+</section>

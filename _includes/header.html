@@ -121,6 +121,11 @@
           {{ site.website_title | default: "Blog" }}: {% include a.html href=site.website %}{{ site.website | escape }}</a>
         </p>
       {%- endif -%}
+      {%- if site.portfolio_url -%}
+        <p>
+          Portfolio: {% include a.html href=site.portfolio_url class="portfolio-contact-link" %}{{ site.portfolio_url | relative_url }}</a>
+        </p>
+      {%- endif -%}
     </div>
   </div>
 </div>

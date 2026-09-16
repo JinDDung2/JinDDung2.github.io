@@ -1,0 +1,21 @@
+<figure class="structure" data-diagram="popular-query">
+  <figcaption>인기순 Top 20 · 계산 비용을 부담하는 시점의 변화</figcaption>
+  <div class="diagram-grid">
+    <div class="diagram-side before">
+      <div class="diagram-label">BEFORE <span>매 조회마다 좋아요 100만 건 집계</span></div>
+      <div class="node">인기순 조회 요청</div><div class="down" aria-hidden="true">↓</div>
+      <div class="node risk">GROUP BY + COUNT<small>상품별 좋아요 수 계산</small></div><div class="down" aria-hidden="true">↓</div>
+      <div class="flow"><div class="node risk">ORDER BY<small>집계 결과 정렬</small></div><span class="arrow" aria-hidden="true">→</span><div class="node">Top 20</div></div>
+      <p class="flow-caption">데이터 증가 → <strong>반복 집계 비용 증가</strong></p>
+    </div>
+    <div class="diagram-side after">
+      <div class="diagram-label">AFTER <span>집계값을 미리 관리</span></div>
+      <div class="read-write"><span class="lane-label">쓰기</span><div class="flow"><div class="node">좋아요 변경</div><span class="arrow" aria-hidden="true">→</span><div class="node good">메타 집계값 갱신</div></div></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node good">상품 메타 테이블<small>like_count · 인기순 인덱스</small></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="read-write"><span class="lane-label">읽기</span><div class="flow"><div class="node">인덱스 조회</div><span class="arrow" aria-hidden="true">→</span><div class="node good">Top 20</div></div></div>
+      <p class="flow-caption">읽기 경로에서 <strong>실시간 집계 제거</strong></p>
+    </div>
+  </div>
+</figure>

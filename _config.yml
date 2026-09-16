@@ -11,6 +11,7 @@ title: Software Engineer
 email: gjwlsgur4866@gmail.com
 phone: 010-4140-4866
 website: https://velog.io/@wlsgur1533
+portfolio_url: /portfolio/
 
 # Dark Mode (true/false/never)
 darkmode: false
@@ -31,16 +32,16 @@ github_username: jinDDung2
 # googlescholar_username: D847cGsAAAAJ
 
 # Additional icon links
-# additional_links:
-# - title: another link
-#   icon: font awesome brand icon name (eg. fab fa-twitter) (https://fontawesome.com/icons?d=gallery&s=brands&m=free)
-#   url: Link url (eg. https://google.com)
+additional_links:
+- title: Portfolio
+  icon: fas fa-briefcase
+  url: /portfolio/
 
 # About Section
 # about_title: About Me (Use this to override about section title)
 about_profile_image: (eg. images/profile.jpg)
 about_content: |
-  백엔드에서 쿼리 최적화로 15% 성능 향상을 달성하였으며, AOP를 활용해 비즈니스 로직과 부가 로직을 분리한 경험이 있습니다. 
+  동시 요청에서도 데이터 규칙을 지키고, 외부 호출 실패를 복구할 수 있는 구조를 고민하는 백엔드 개발자입니다. MySQL·Redis를 활용한 발급 동시성 제어와, 실시간 집계 구조 전환으로 인기순 조회를 4.6초에서 145ms로 개선한 경험이 있습니다.
   또한, 효과적인 의사소통을 중시하여 좋은 질문하는 문화를 조성하는 것을 좋아하며, [Notion](https://night-comma-b4a.notion.site/23-01-13-23-02-16-12ddd64750ad46a0b1547e64ab6fbf5c) 및 [WBS](https://docs.google.com/spreadsheets/d/1xUwk6fgmqTmHhxgPIve0l4bc1mUKWrWxojsINmFgmtc/edit?usp=sharing) 활용해 일정 공유와 기록을 통해 팀의 협업을 강화한 경험이 있습니다.
 
 # Projects Section
@@ -79,4 +80,5 @@ exclude:
     "lib/",
     "scripts/",
     "docker-compose.yml",
+    "portfolio/artifacts/",
   ]

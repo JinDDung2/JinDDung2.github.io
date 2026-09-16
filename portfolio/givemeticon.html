@@ -1,0 +1,113 @@
+---
+layout: case
+title: Givemeticon | 쿠폰 정합성과 인기순 조회 개선
+permalink: /portfolio/givemeticon/
+project: givemeticon
+---
+<section class="experience" id="coupon-consistency" aria-labelledby="coupon-title">
+  <header class="experience-heading">
+    <p class="eyebrow">01 / CONSISTENCY · Redisson, MySQL</p>
+    <h2 id="coupon-title">재고와 중복 발급 규칙을 DB까지 보호</h2>
+    <p class="problem"><strong>문제</strong>동시 요청에서 재고를 초과하거나 같은 사용자에게 쿠폰을 중복 발급할 수 있었습니다.</p>
+  </header>
+  {% include portfolio/coupon-consistency.html %}
+  <div class="analysis-grid">
+    <div>
+      <h3 class="section-label">판단 근거</h3>
+      <p class="decision-lead">락이 풀려도 재고와 중복 발급 규칙은<br>DB에서 지켜져야 했습니다.</p>
+      <ul class="decision-list">
+        <li><strong>경합 제어:</strong> stockId 기준 Redisson 분산락으로 같은 재고의 동시 진입을 제어했습니다.</li>
+        <li><strong>재고 보호:</strong> 조회 후 차감 사이의 경쟁을 없애기 위해 <code>remain &gt; 0</code>인 경우에만 DB가 원자적으로 차감하게 했습니다.</li>
+        <li><strong>중복 보호:</strong> <code>(user_id, stock_id)</code> UNIQUE와 변경 행 수 확인으로 발급 성공을 판단했습니다.</li>
+      </ul>
+      <details>
+        <summary>Redis만으로 충분하지 않다고 본 이유</summary>
+        <p>lease 만료·Redis 장애 등으로 락의 보호가 끊기는 경우에도 DB에는 잘못된 발급 결과가 남아서는 안 됩니다. Redis는 요청 경합을 제어하고, DB의 조건과 제약은 저장할 수 있는 데이터의 범위를 제한하도록 역할을 나눴습니다.</p>
+        <p><code>INSERT IGNORE</code>가 중복을 무시했더라도 성공으로 처리하지 않습니다. 반환된 행 수가 1이 아니면 예외를 발생시켜 재고 차감도 함께 롤백되도록 구성했습니다.</p>
+      </details>
+    </div>
+    <div>
+      <div class="code-title"><h3 class="section-label">핵심 코드</h3><span>SQL / Java · 핵심 발췌</span></div>
+{% highlight sql %}
+UPDATE coupon_stock
+SET remain = remain - 1
+WHERE id = #{id} AND remain > 0;
+{% endhighlight %}
+{% highlight java %}
+int updatedRows = couponStockMapper.decreaseStockIfEnough(stockId);
+if (updatedRows != 1) {
+    throw new NotEnoughCouponStockException();
+}
+// UNIQUE(user_id, stock_id)를 가진 테이블에 INSERT IGNORE
+int insertedRows = couponMapper.saveIfNotIssued(coupon);
+if (insertedRows != 1) {
+    throw new AlreadyIssuedCouponException();
+}
+{% endhighlight %}
+      <p class="code-note">재고·쿠폰 서비스의 검사 부분을 모았습니다. 락 획득 후 AopForTransaction이 발급 흐름을 REQUIRES_NEW로 감싸며, 예외 시 함께 롤백하는 구조입니다.</p>
+    </div>
+  </div>
+  <div class="verification">
+    <h3 class="section-label">검증 결과</h3>
+    <div class="metrics">
+      <div class="metric"><strong>100개</strong><span>초기 재고 100개 → 발급 100개</span></div>
+      <div class="metric"><strong>0개</strong><span>최종 DB 잔여 재고</span></div>
+      <div class="metric"><strong>0건</strong><span>사용자별 중복 발급</span></div>
+    </div>
+    <p>로컬 애플리케이션 2대 환경에서 동시 요청 후 MySQL의 최종 발급 수·잔여 재고·중복 건수를 조회한 결과입니다.</p>
+  </div>
+  <aside class="limits"><h3>한계 · 다음 단계</h3><p>stockId 단위 직렬화는 요청 증가 시 대기 병목이 될 수 있습니다. 정상 동시 요청의 결과만으로 장애까지 보장할 수는 없어, 락 만료·쿠폰 생성 실패 시 롤백과 Redis 발급 이력의 불일치를 별도 통합 테스트로 검증해야 합니다.</p></aside>
+</section>
+
+<section class="experience" id="popular-query" aria-labelledby="popular-title">
+  <header class="experience-heading">
+    <p class="eyebrow">02 / READ PERFORMANCE · MySQL, 사전 집계</p>
+    <h2 id="popular-title">인기순 조회에서 반복 집계 비용 제거</h2>
+    <p class="problem"><strong>문제</strong>좋아요 100만 건을 실시간 집계하면서 인기순 Top 20 조회가 4.6초까지 느려졌습니다.</p>
+  </header>
+  {% include portfolio/popular-query.html %}
+  <div class="analysis-grid">
+    <div>
+      <h3 class="section-label">판단 근거</h3>
+      <p class="decision-lead">20개를 보여주기 위해 매번 전체를<br>집계하는 비용에 주목했습니다.</p>
+      <ul class="decision-list">
+        <li><strong>시행착오:</strong> 좋아요 테이블에 인덱스를 추가했지만, <code>GROUP BY + COUNT + ORDER BY</code>의 반복 계산은 남았습니다.</li>
+        <li><strong>원인 판단:</strong> <code>LIMIT 20</code>이어도 상위 상품을 찾기 위한 집계·정렬 비용이 먼저 발생하는 구조였습니다.</li>
+        <li><strong>구조 전환:</strong> 쓰기 시점에 메타 테이블의 집계값을 갱신하고, 인기순 커버링 인덱스로 집계값 조회의 I/O를 줄였습니다.</li>
+      </ul>
+      <details>
+        <summary>사전 집계와 커버링 인덱스의 역할</summary>
+        <p>사전 집계는 조회 시 좋아요 행을 다시 세는 작업을 제거합니다. 커버링 인덱스는 필요한 정렬 키와 집계값을 인덱스에서 읽게 해 추가 테이블 접근을 줄입니다.</p>
+        <p>상품 정보는 별도 JOIN으로 조회합니다. 아래 전체 쿼리가 모두 커버링된다는 의미는 아니며, 실제 접근 경로와 정렬 여부는 EXPLAIN으로 확인해야 합니다.</p>
+      </details>
+    </div>
+    <div>
+      <div class="code-title"><h3 class="section-label">핵심 쿼리</h3><span>MyBatis · ItemMapper 발췌</span></div>
+{% highlight sql %}
+SELECT i.id,
+       i.brand_id,
+       i.name,
+       i.price,
+       m.like_count,
+       m.view_count
+FROM item_favorite_meta m
+JOIN item i
+  ON i.id = m.item_id
+ORDER BY m.like_count DESC, m.item_id DESC
+LIMIT #{limit};
+{% endhighlight %}
+      <p class="code-note">좋아요를 실시간 COUNT하지 않고 저장된 like_count로 정렬합니다. 같은 좋아요 수는 item_id로 순서를 결정합니다.</p>
+    </div>
+  </div>
+  <div class="verification verification--chart">
+    <div>
+      <h3 class="section-label">검증 결과 · Top 20 조회 시간</h3>
+      <figure class="chart" aria-label="동일 선형 축에서 기존 4600밀리초, 개선 후 145밀리초">
+        <div class="chart-row"><span>Before</span><div class="bar-track"><span class="bar"></span></div><strong>4,600ms</strong></div>
+        <div class="chart-row"><span>After</span><div class="bar-track"><span class="bar after"></span></div><strong>145ms</strong></div>
+      </figure>
+    </div>
+    <div class="chart-result"><strong>약 96% 감소</strong><p>상품 10만 개 · 좋아요 100만 건<br>실시간 집계 → 메타 테이블 기반 조회</p><p class="code-note">기존 측정 결과 기준. 실행 환경·반복 횟수·캐시 상태의 상세 기록은 별도 보완이 필요합니다.</p></div>
+  </div>
+  <aside class="limits"><h3>한계 · 다음 단계</h3><p>조회 비용을 줄인 만큼 좋아요 추가·취소 시 집계값을 정확히 갱신해야 합니다. 원본 좋아요와 메타 값의 불일치를 탐지하는 검증과 재집계 복구가 필요하며, 인기 상품에 쓰기가 집중될 때의 갱신 경합도 확인해야 합니다.</p></aside>
+</section>

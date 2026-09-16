@@ -1,0 +1,27 @@
+{% assign project = site.data.portfolio | where: 'id', page.project | first %}
+<!DOCTYPE html>
+<html lang="ko">
+{% include head.html portfolio=true %}
+<body id="top" class="portfolio {{ project.id }}">
+  {% include portfolio/nav.html %}
+  <main id="main">
+    <header class="project-intro wrap">
+      <a class="back-link" href="{{ '/portfolio/' | relative_url }}"><span aria-hidden="true">←</span> 전체 프로젝트</a>
+      <p class="eyebrow">{{ project.period }} / {{ project.role }}</p>
+      <h1>{{ project.name }}</h1>
+      <p class="project-subtitle">{{ project.summary }}</p>
+      <p class="project-focus">{{ project.focus }}</p>
+      <div class="intro-index"><span>{{ project.stack | join: ' · ' }}</span><a href="{{ project.github }}" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></div>
+    </header>
+    <nav class="case-nav" aria-label="프로젝트 경험"><div class="wrap">
+      {% for case in project.cases %}<a href="#{{ case.id }}">{{ case.number }} <span>{{ case.title }}</span></a>{% endfor %}
+    </div></nav>
+    <div class="wrap case-content">{{ content }}</div>
+    <nav class="project-next wrap" aria-label="다른 프로젝트">
+      <a href="{{ '/portfolio/' | relative_url }}"><span aria-hidden="true">←</span> 전체 프로젝트</a>
+      {% for other in site.data.portfolio %}{% unless other.id == project.id %}<a href="{{ other.url | relative_url }}">{{ other.name }} <span aria-hidden="true">→</span></a>{% endunless %}{% endfor %}
+    </nav>
+  </main>
+  {% include portfolio/footer.html %}
+</body>
+</html>

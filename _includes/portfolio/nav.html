@@ -1,0 +1,11 @@
+<a class="skip-link" href="#main">본문으로 이동</a>
+<header class="site-bar">
+  <div class="wrap site-bar__inner">
+    <a class="identity" href="{{ '/portfolio/' | relative_url }}">{{ site.name }}<span>Backend Developer</span></a>
+    <nav aria-label="주 메뉴">
+      <a href="{{ '/portfolio/' | relative_url }}" {% if page.url == '/portfolio/' %}aria-current="page"{% endif %}>포트폴리오</a>
+      <a href="{{ '/' | relative_url }}">이력서</a>
+      <a href="https://github.com/{{ site.github_username }}" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </div>
+</header>

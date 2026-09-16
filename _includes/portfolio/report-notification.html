@@ -1,0 +1,21 @@
+<figure class="structure" data-diagram="report-notification">
+  <figcaption>신고 저장과 외부 알림의 경계</figcaption>
+  <div class="diagram-grid">
+    <div class="diagram-side before">
+      <div class="diagram-label">BEFORE <span>실패한 외부 호출이 기록되지 않음</span></div>
+      <div class="node">신고 저장 로직</div><div class="down" aria-hidden="true">↓</div>
+      <div class="node risk">Slack Webhook 실패</div><div class="down" aria-hidden="true">↓</div>
+      <div class="node risk">알림 누락<small>재처리할 발송 상태 없음</small></div>
+      <p class="flow-caption">운영에서 <strong>신고 저장 / 알림 누락</strong> 사례 확인</p>
+    </div>
+    <div class="diagram-side after">
+      <div class="diagram-label">AFTER <span>커밋 후 처리 + 상태 기반 복구</span></div>
+      <div class="flow"><div class="node">신고 저장</div><span class="arrow" aria-hidden="true">→</span><div class="node good">Commit</div></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node">AFTER_COMMIT 이벤트<small>Outbox PENDING 기록 → Slack 전송</small></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="split-path"><div class="node good">SUCCESS</div><div class="node risk">FAILED</div></div>
+      <p class="flow-caption"><strong>Scheduler ↻</strong> PENDING / FAILED 재처리</p>
+    </div>
+  </div>
+</figure>

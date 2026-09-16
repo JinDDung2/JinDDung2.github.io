@@ -1,0 +1,72 @@
+- id: my-rate
+  name: My Rate (RealRate)
+  role: AI 도구 활용 개발 · Codex, Claude
+  period: 2026.09
+  summary: 개인 우대조건을 반영한 적금 세후 이자 비교 서비스
+  focus: Codex·Claude를 활용해 개발하고, 추출 데이터의 오류와 계산 규칙을 검증하는 과정을 정리했습니다.
+  url: /portfolio/my-rate/
+  github: https://github.com/JinDDung2/my-rate
+  stack: [TypeScript, Next.js, React, Claude API]
+  cases:
+    - id: extraction-verification
+      number: '01'
+      title: AI 추출 결과를 검증 가능한 상품 데이터로
+      summary: 원문 근거 검사 · 전량 대조 · 미검수 빌드 차단
+      result: 43개 상품 대조 · 11개 상품 오류 수정
+      image: /assets/portfolio/extraction-verification.svg
+      alt: AI 구조화 결과에 원문과 합계 검사를 적용하고 전량 검수한 뒤 빌드를 허용하는 흐름
+    - id: personal-interest
+      number: '02'
+      title: 개인별 적용금리와 세후 이자의 계산 규칙 보장
+      summary: 정수 bp 합산 · 최고금리 상한 · 단리와 월복리
+      result: 계산·순위·UI·공유 URL 테스트 66개 통과
+      image: /assets/portfolio/personal-interest.svg
+      alt: 선택한 우대조건으로 적용금리를 구하고 단리 또는 월복리의 세후 이자로 상품을 정렬하는 흐름
+- id: adevspoon
+  name: 개발 한 스푼
+  role: Backend · 팀 기여 30%
+  period: 2024.05 ~ 2024.06
+  summary: 하루 한 질문으로 CS를 학습하는 모바일 애플리케이션
+  focus: 사용자별 발급 정책을 지키고, 놓친 신고 알림을 복구했습니다.
+  url: /portfolio/adevspoon/
+  github: https://github.com/kids-ground/adevspoon-backend
+  stack: [Kotlin, Spring Boot, MySQL]
+  cases:
+    - id: daily-question
+      number: '01'
+      title: 하루 한 번의 발급을 지키는 동시성 제어
+      summary: MySQL Named Lock · 사용자 단위 임계구역
+      result: 동시 요청 3개 → 동일 질문 ID
+      image: /assets/portfolio/daily-question.png
+      alt: 두 동시 요청이 각각 발급되던 흐름을 사용자별 락과 이력 재조회로 직렬화한 구조
+    - id: report-notification
+      number: '02'
+      title: 누락된 신고 알림을 복구 가능한 작업으로
+      summary: Spring 트랜잭션 이벤트 · Outbox · Scheduler
+      result: 발송 실패 → 상태 기록 → 재처리
+      image: /assets/portfolio/report-notification.png
+      alt: 신고 커밋 이후 Outbox를 기록하고 Slack 발송 실패를 스케줄러로 재처리하는 구조
+- id: givemeticon
+  name: Givemeticon
+  role: Backend
+  period: 2023.09 ~ 2024.01
+  summary: 만료가 임박한 기프티콘을 사고파는 중고거래 플랫폼
+  focus: 쿠폰의 재고 정합성과 인기순 조회의 성능을 개선했습니다.
+  url: /portfolio/givemeticon/
+  github: https://github.com/f-lab-edu/givemeticon
+  stack: [Java, Spring Boot, MyBatis, MySQL, Redis]
+  cases:
+    - id: coupon-consistency
+      number: '01'
+      title: 재고와 중복 발급 규칙을 DB까지 보호
+      summary: Redisson 분산락 · 원자적 갱신 · UNIQUE
+      result: 재고 100개 → 발급 100개 · 중복 0건
+      image: /assets/portfolio/coupon-consistency.png
+      alt: Redisson 분산락과 DB 조건부 갱신 및 유니크 제약으로 재고와 중복 발급을 보호하는 구조
+    - id: popular-query
+      number: '02'
+      title: 인기순 조회에서 반복 집계 비용 제거
+      summary: 사전 집계 메타 테이블 · 커버링 인덱스
+      result: 4.6초 → 145ms · 약 96% 개선
+      image: /assets/portfolio/popular-query.png
+      alt: 조회마다 좋아요를 집계하던 방식에서 쓰기 때 집계값을 갱신하고 조회 때 읽는 방식으로 전환한 구조

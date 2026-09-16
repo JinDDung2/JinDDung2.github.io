@@ -4,3 +4,6 @@
 _site
 *.code-workspace
 vendor
+
+# Local reference material, excluded from GitHub Pages as well.
+portfolio/artifacts/

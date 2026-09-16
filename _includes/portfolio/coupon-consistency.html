@@ -1,0 +1,20 @@
+<figure class="structure" data-diagram="coupon-consistency">
+  <figcaption>경합 제어와 데이터 정합성의 역할 분리</figcaption>
+  <div class="diagram-grid">
+    <div class="diagram-side before">
+      <div class="diagram-label">BEFORE <span>조회 결과만으로 발급 가능 여부 판단</span></div>
+      <div class="flow"><div class="node">요청 A</div><span class="arrow" aria-hidden="true">→</span><div class="node">남은 재고 1</div><span class="arrow" aria-hidden="true">→</span><div class="node risk">발급 진행</div></div>
+      <div class="flow"><div class="node">요청 B</div><span class="arrow" aria-hidden="true">→</span><div class="node">남은 재고 1</div><span class="arrow" aria-hidden="true">→</span><div class="node risk">발급 진행</div></div>
+      <p class="flow-caption"><strong>초과 발급 / 같은 사용자의 중복 발급</strong> 가능</p>
+    </div>
+    <div class="diagram-side after">
+      <div class="diagram-label">AFTER <span>Redis + MySQL</span></div>
+      <div class="node good">Redisson 분산락<small>stockId 단위 진입 제어</small></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="node">트랜잭션 진입 · ZSet 순서 확인</div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="scope"><span class="scope-label">DB에서 지키는 두 가지 규칙</span><div class="flow"><div class="node good">조건부 재고 차감<small>remain &gt; 0</small></div><span class="arrow" aria-hidden="true">→</span><div class="node good">중복 발급 차단<small>UNIQUE(user, stock)</small></div></div></div>
+      <p class="flow-caption"><strong>변경 행 수 확인</strong> · 실패 시 예외로 롤백</p>
+    </div>
+  </div>
+</figure>

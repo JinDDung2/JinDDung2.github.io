@@ -19,6 +19,9 @@
         </a>
       </p>
     {%- endif -%}
+    {%- if include.item.portfolio -%}
+      <p class="project-portfolio-link"><a href="{{ include.item.portfolio | relative_url }}">포트폴리오 <i class="fas fa-arrow-right" aria-hidden="true"></i></a></p>
+    {%- endif -%}
   </div>
   <div class="col-xs-12 col-sm-8 col-md-9 col-print-12">
     {%- if include.item.quote -%}

@@ -1,0 +1,17 @@
+<figure class="structure" data-diagram="extraction-verification">
+<figcaption>AI 추출 데이터의 검증 흐름</figcaption><div class="diagram-grid">
+<div class="diagram-side after"><div class="diagram-label">자동 검사</div>
+<div class="node good">공시 원문 → AI 구조화</div>
+<div class="down" aria-hidden="true">↓</div>
+<div class="node good">원문 근거 · 우대 합계 검사</div>
+<div class="down" aria-hidden="true">↓</div>
+<div class="node good">검수 우선순위 표시</div>
+<p class="flow-caption">자동 검사는 의미 오류 전체를 탐지하지 못함</p></div>
+<div class="diagram-side after"><div class="diagram-label">전량 검수와 빌드</div>
+<div class="node good">43개 상품 원문 대조</div>
+<div class="down" aria-hidden="true">↓</div>
+<div class="node good">11개 상품 오류 수정</div>
+<div class="down" aria-hidden="true">↓</div>
+<div class="node good">미검수 상품이 있으면 빌드 실패</div>
+<p class="flow-caption">최종 검수 표시 43/43 · 원문 근거 일치 105/105</p></div>
+</div></figure>

@@ -13,6 +13,10 @@
   font-weight:500;
 }
 
+.header-right .portfolio-contact-link {
+  font-weight: 600;
+}
+
 @media screen and (max-width: 767px) {
   .header-container div{
     text-align: center;
@@ -191,4 +195,21 @@ p.quote {
     padding: 0rem 1rem;
     margin-top: 1rem;
   }
+}
+
+.project-portfolio-link a {
+  font-style: normal !important;
+  font-weight: 500 !important;
+}
+
+.certification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-bottom: 20px;
+
+  h4 { font-size: 2rem; font-weight: 500; }
+  p { margin: 0; color: #555; text-align: left; }
 }

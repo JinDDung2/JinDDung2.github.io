@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+{% include head.html portfolio=true %}
+<body id="top" class="portfolio">
+  {% include portfolio/nav.html %}
+  <main id="main" class="wrap">
+    <header class="index-intro">
+      <p class="eyebrow">BACKEND ENGINEERING / SELECTED WORK</p>
+      <h1>{{ site.name }}의 포트폴리오</h1>
+      <p>AI 추출 오류, 계산 규칙, 동시 요청과 조회 성능.<br>문제의 원인을 좁히고, 기술 선택과 결과로 답한 기록입니다.</p>
+      {% assign experience_count = 0 %}{% for project in site.data.portfolio %}{% assign experience_count = experience_count | plus: project.cases.size %}{% endfor %}
+      <div class="intro-index"><span>{{ site.data.portfolio.size }} 프로젝트</span><span>{{ experience_count }} 핵심 경험</span><a href="{{ '/' | relative_url }}">이력서 보기 <span aria-hidden="true">↗</span></a></div>
+    </header>
+    {% for project in site.data.portfolio %}
+    <section class="project-section {{ project.id }}" aria-labelledby="{{ project.id }}-title">
+      <header class="project-heading">
+        <div><p class="eyebrow">PROJECT {{ forloop.index | prepend: '0' }} / {{ project.period }}</p><h2 id="{{ project.id }}-title"><a href="{{ project.url | relative_url }}">{{ project.name }} <span aria-hidden="true">↗</span></a></h2><p>{{ project.summary }}</p></div>
+        <div class="project-meta"><span>{{ project.role }}</span><span>{{ project.stack | join: ' · ' }}</span></div>
+      </header>
+      <div class="case-previews">
+        {% for case in project.cases %}
+        <a class="case-preview" href="{{ project.url | append: '#' | append: case.id | relative_url }}">
+          <div class="case-preview__image"><img src="{{ case.image | relative_url }}" alt="{{ case.alt }}" width="1000" height="560" {% if project.id == 'givemeticon' %}loading="lazy"{% endif %}></div>
+          <div class="case-preview__content"><p class="eyebrow">CASE {{ case.number }}</p><h3>{{ case.title }}</h3><p>{{ case.summary }}</p><div class="preview-result"><strong>{{ case.result }}</strong><span aria-hidden="true">↗</span></div></div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </main>
+  {% include portfolio/footer.html %}
+</body>
+</html>
