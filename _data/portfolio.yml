@@ -1,27 +1,29 @@
-- id: my-rate
-  name: My Rate (RealRate)
-  role: AI 도구 활용 개발 · Codex, Claude
-  period: 2026.09
-  summary: 개인 우대조건을 반영한 적금 세후 이자 비교 서비스
-  focus: Codex·Claude를 활용해 개발하고, 추출 데이터의 오류와 계산 규칙을 검증하는 과정을 정리했습니다.
-  url: /portfolio/my-rate/
-  github: https://github.com/JinDDung2/my-rate
-  stack: [TypeScript, Next.js, React, Claude API]
-  cases:
-    - id: extraction-verification
-      number: '01'
-      title: AI 추출 결과를 검증 가능한 상품 데이터로
-      summary: 원문 근거 검사 · 전량 대조 · 미검수 빌드 차단
-      result: 43개 상품 대조 · 11개 상품 오류 수정
-      image: /assets/portfolio/extraction-verification.svg
-      alt: AI 구조화 결과에 원문과 합계 검사를 적용하고 전량 검수한 뒤 빌드를 허용하는 흐름
-    - id: personal-interest
-      number: '02'
-      title: 개인별 적용금리와 세후 이자의 계산 규칙 보장
-      summary: 정수 bp 합산 · 최고금리 상한 · 단리와 월복리
-      result: 계산·순위·UI·공유 URL 테스트 66개 통과
-      image: /assets/portfolio/personal-interest.svg
-      alt: 선택한 우대조건으로 적용금리를 구하고 단리 또는 월복리의 세후 이자로 상품을 정렬하는 흐름
+# My Rate (RealRate): 공개 목록에서 숨김. 다시 공개하려면 아래 항목의 주석을 해제하세요.
+# - id: my-rate
+#   name: My Rate (RealRate)
+#   role: AI 도구 활용 개발 · Codex, Claude
+#   period: 2026.09
+#   summary: 개인 우대조건을 반영한 적금 세후 이자 비교 서비스
+#   focus: Codex·Claude를 활용해 개발하고, 추출 데이터의 오류와 계산 규칙을 검증하는 과정을 정리했습니다.
+#   url: /portfolio/my-rate/
+#   github: https://github.com/JinDDung2/my-rate
+#   stack: [TypeScript, Next.js, React, Claude API]
+#   cases:
+#     - id: extraction-verification
+#       number: '01'
+#       title: AI 추출 결과를 검증 가능한 상품 데이터로
+#       summary: 원문 근거 검사 · 전량 대조 · 미검수 빌드 차단
+#       result: 43개 상품 대조 · 11개 상품 오류 수정
+#       image: /assets/portfolio/extraction-verification.svg
+#       alt: AI 구조화 결과에 원문과 합계 검사를 적용하고 전량 검수한 뒤 빌드를 허용하는 흐름
+#     - id: personal-interest
+#       number: '02'
+#       title: 개인별 적용금리와 세후 이자의 계산 규칙 보장
+#       summary: 정수 bp 합산 · 최고금리 상한 · 단리와 월복리
+#       result: 계산·순위·UI·공유 URL 테스트 66개 통과
+#       image: /assets/portfolio/personal-interest.svg
+#       alt: 선택한 우대조건으로 적용금리를 구하고 단리 또는 월복리의 세후 이자로 상품을 정렬하는 흐름
+
 - id: adevspoon
   name: 개발 한 스푼
   role: Backend · 팀 기여 30%

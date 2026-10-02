@@ -81,4 +81,8 @@ exclude:
     "scripts/",
     "docker-compose.yml",
     "portfolio/artifacts/",
+    # My Rate (RealRate) 상세 페이지와 관련 이미지 비공개
+    "portfolio/my-rate.html",
+    "assets/portfolio/extraction-verification.svg",
+    "assets/portfolio/personal-interest.svg",
   ]
