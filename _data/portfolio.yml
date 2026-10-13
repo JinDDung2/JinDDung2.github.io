@@ -27,7 +27,7 @@
 - id: adevspoon
   name: 개발 한 스푼
   role: Backend · 팀 기여 30%
-  period: 2024.05 ~ 2024.06
+  period: '개발 2024.03 ~ 2024.06 · 운영 2024.01 ~ 2025.01'
   summary: 하루 한 질문으로 CS를 학습하는 모바일 애플리케이션
   focus: 사용자별 발급 정책을 지키고, 놓친 신고 알림을 복구했습니다.
   url: /portfolio/adevspoon/

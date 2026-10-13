@@ -21,7 +21,7 @@
 - name: 개발 한 스푼
   github: kids-ground/adevspoon-backend
   portfolio: /portfolio/adevspoon/
-  dates: 2024.05 ~ 2024.06
+  dates: '개발 2024.03 ~ 2024.06 · 운영 2024.01 ~ 2025.01'
   quote: 문답 기반으로 CS 학습을 돕는 모바일 애플리케이션
   description: |
     팀 프로젝트 · 백엔드 기여 30% · Kotlin, Spring Boot, MySQL
