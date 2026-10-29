@@ -10,12 +10,12 @@
     </div>
     <div class="diagram-side after">
       <div class="diagram-label">AFTER <span>커밋 후 처리 + 상태 기반 복구</span></div>
-      <div class="flow"><div class="node">신고 저장</div><span class="arrow" aria-hidden="true">→</span><div class="node good">Commit</div></div>
+      <div class="flow"><div class="node">신고 + Outbox 저장<small>동일 트랜잭션</small></div><span class="arrow" aria-hidden="true">→</span><div class="node good">Commit</div></div>
       <div class="down" aria-hidden="true">↓</div>
-      <div class="node">AFTER_COMMIT 이벤트<small>Outbox PENDING 기록 → Slack 전송</small></div>
+      <div class="node">AFTER_COMMIT 이벤트<small>조건부 선점 → Slack 전송</small></div>
       <div class="down" aria-hidden="true">↓</div>
       <div class="split-path"><div class="node good">SUCCESS</div><div class="node risk">FAILED</div></div>
-      <p class="flow-caption"><strong>Scheduler ↻</strong> PENDING / FAILED 재처리</p>
+      <p class="flow-caption"><strong>Scheduler ↻</strong> 1·5·15분 간격 · 최초 포함 최대 4회</p>
     </div>
   </div>
 </figure>

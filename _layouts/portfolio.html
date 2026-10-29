@@ -14,7 +14,7 @@
     {% for project in site.data.portfolio %}
     <section class="project-section {{ project.id }}" aria-labelledby="{{ project.id }}-title">
       <header class="project-heading">
-        <div><p class="eyebrow">PROJECT {{ forloop.index | prepend: '0' }} / {{ project.period }}</p><h2 id="{{ project.id }}-title"><a href="{{ project.url | relative_url }}">{{ project.name }} <span aria-hidden="true">↗</span></a></h2><p>{{ project.summary }}</p></div>
+        <div><p class="eyebrow">PROJECT {{ forloop.index | prepend: '0' }} / {{ project.period | join: '<br>' }}</p><h2 id="{{ project.id }}-title"><a href="{{ project.url | relative_url }}">{{ project.name }} <span aria-hidden="true">↗</span></a></h2><p>{{ project.summary }}</p></div>
         <div class="project-meta"><span>{{ project.role }}</span><span>{{ project.stack | join: ' · ' }}</span></div>
       </header>
       <div class="case-previews">

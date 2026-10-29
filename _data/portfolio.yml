@@ -27,7 +27,9 @@
 - id: adevspoon
   name: 개발 한 스푼
   role: Backend · 팀 기여 30%
-  period: '개발 2024.03 ~ 2024.06 · 운영 2024.01 ~ 2025.01'
+  period:
+    - 개발 2024.03 ~ 2024.06
+    - 운영 2024.01 ~ 2025.01
   summary: 하루 한 질문으로 CS를 학습하는 모바일 애플리케이션
   focus: 사용자별 발급 정책을 지키고, 놓친 신고 알림을 복구했습니다.
   url: /portfolio/adevspoon/
@@ -44,10 +46,10 @@
     - id: report-notification
       number: '02'
       title: 누락된 신고 알림을 복구 가능한 작업으로
-      summary: Spring 트랜잭션 이벤트 · Outbox · Scheduler
+      summary: Transactional Outbox · 커밋 후 전송 · Scheduler
       result: 발송 실패 → 상태 기록 → 재처리
       image: /assets/portfolio/report-notification.png
-      alt: 신고 커밋 이후 Outbox를 기록하고 Slack 발송 실패를 스케줄러로 재처리하는 구조
+      alt: 신고와 Outbox를 같은 트랜잭션에 저장하고 Slack 발송 실패를 스케줄러로 재처리하는 구조
 - id: givemeticon
   name: Givemeticon
   role: Backend

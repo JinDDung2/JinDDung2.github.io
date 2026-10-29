@@ -7,7 +7,7 @@
   <main id="main">
     <header class="project-intro wrap">
       <a class="back-link" href="{{ '/portfolio/' | relative_url }}"><span aria-hidden="true">←</span> 전체 프로젝트</a>
-      <p class="eyebrow">{{ project.period }} / {{ project.role }}</p>
+      <p class="eyebrow">{{ project.period | join: '<br>' }}<br>{{ project.role }}</p>
       <h1>{{ project.name }}</h1>
       <p class="project-subtitle">{{ project.summary }}</p>
       <p class="project-focus">{{ project.focus }}</p>

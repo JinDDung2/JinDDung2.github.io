@@ -21,7 +21,9 @@
 - name: 개발 한 스푼
   github: kids-ground/adevspoon-backend
   portfolio: /portfolio/adevspoon/
-  dates: '개발 2024.03 ~ 2024.06 · 운영 2024.01 ~ 2025.01'
+  dates:
+    - 개발 2024.03 ~ 2024.06
+    - 운영 2024.01 ~ 2025.01
   quote: 문답 기반으로 CS 학습을 돕는 모바일 애플리케이션
   description: |
     팀 프로젝트 · 백엔드 기여 30% · Kotlin, Spring Boot, MySQL
@@ -34,7 +36,7 @@
     **신고 알림 누락의 추적·복구 구조 구축**
     - **문제** · 운영 중 신고는 저장됐지만 Slack 알림이 누락되어 신고를 인지하지 못하는 사례가 발생했습니다.
     - **판단** · 신고 저장과 외부 알림의 실패를 분리하고, 실패한 알림을 추적·복구할 수 있어야 한다고 보았습니다.
-    - **해결/결과** · Spring 트랜잭션 이벤트와 Outbox 상태 기록, 스케줄러 재처리로 Webhook 실패 알림을 복구하는 흐름을 구축했습니다.
+    - **해결/결과** · 신고와 Outbox를 같은 트랜잭션에 저장하고, 커밋 후 전송·스케줄러 재처리(1·5·15분 간격, 최대 4회)로 Webhook 실패 알림을 복구하는 흐름을 구축했습니다.
 
 - name: Givemeticon
   github: f-lab-edu/givemeticon

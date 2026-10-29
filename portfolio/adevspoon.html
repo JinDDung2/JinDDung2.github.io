@@ -72,62 +72,68 @@ fun getOrCreateTodayQuestion(request: GetTodayQuestion): QuestionInfo {
 
 <section class="experience" id="report-notification" aria-labelledby="report-title">
   <header class="experience-heading">
-    <p class="eyebrow">02 / RELIABILITY · Transactional Event, Outbox, Scheduler</p>
+    <p class="eyebrow">02 / RELIABILITY · Transactional Outbox, Scheduler</p>
     <h2 id="report-title">누락된 신고 알림을 복구 가능한 작업으로</h2>
     <p class="problem"><strong>문제</strong>운영 중 신고 데이터는 저장됐지만 Slack 알림이 누락되는 사례가 발생했습니다.</p>
   </header>
   {% include portfolio/report-notification.html %}
   <div class="analysis-grid">
     <div>
-      <h3 class="section-label">판단 근거</h3>
-      <p class="decision-lead">신고 저장과 Slack 전송은<br>성공 기준이 다른 작업이었습니다.</p>
+      <h3 class="section-label">원인과 판단 근거</h3>
+      <p class="decision-lead">실패를 감지하는 것과<br>작업을 잃지 않는 것은 별개의 문제였습니다.</p>
       <ul class="decision-list">
-        <li><strong>장애 범위 분리:</strong> 신고 커밋 이후 이벤트로 외부 호출을 옮겨 저장과 알림 실패가 서로 영향을 주지 않게 했습니다.</li>
-        <li><strong>재처리 근거 확보:</strong> 발송 상태·실패 사유·payload를 Outbox에 남겨 실패한 작업을 다시 찾을 수 있게 했습니다.</li>
-        <li><strong>상태 영속화:</strong> Outbox 생성과 상태 변경은 별도 서비스의 <code>REQUIRES_NEW</code> 트랜잭션으로 처리했습니다.</li>
+        <li><strong>원인 확인:</strong> 리스너 미실행·예외 은폐·외부 API 실패로 가설을 나눠 검증한 결과, Slack의 HTTP 오류 응답(4xx·5xx)을 검사하지 않아 실패를 감지하지 못했습니다.</li>
+        <li><strong>구조적 한계:</strong> 전송 작업이 메모리에만 존재해 외부 API 장애나 서버 재시작 시 미완료 작업을 복구할 수 없었습니다.</li>
+        <li><strong>동일 트랜잭션 저장:</strong> AOP 실행 순서를 조정해 신고 데이터와 Outbox를 같은 트랜잭션에 저장하고, 전송만 커밋 이후로 미뤘습니다.</li>
+        <li><strong>중복 선점 방지:</strong> 조건부 UPDATE와 행 잠금으로 다중 인스턴스가 같은 작업을 동시에 처리하지 않게 했습니다.</li>
       </ul>
       <details>
         <summary>재처리 조건과 횟수 기준</summary>
-        <p>스케줄러는 1분 간격으로, 생성 후 5분이 지난 PENDING / FAILED 중 <code>retry_count &lt; 3</code>인 작업을 조회합니다. 현재 카운터는 최초 전송을 포함해 실패할 때 증가하므로, 실패 누적 3회가 되면 자동 재처리를 중단합니다.</p>
+        <p>스케줄러는 1분 간격으로 재처리 대상을 조회합니다. 최초 전송을 포함해 최대 4회 시도하며, 실패 후 다음 시도는 1분·5분·15분 뒤입니다. 408·429·5xx는 재시도하고 429 응답의 <code>Retry-After</code>는 다음 시도 시각에 반영합니다. 그 외 4xx는 재시도해도 같은 결과이므로 즉시 최종 실패로 처리합니다.</p>
       </details>
     </div>
     <div>
-      <div class="code-title"><h3 class="section-label">핵심 코드</h3><span>Kotlin · 발송 흐름 발췌</span></div>
+      <div class="code-title"><h3 class="section-label">핵심 코드</h3><span>Kotlin · 발췌</span></div>
 {% highlight kotlin %}
+// 신고를 저장하는 @Transactional 메서드 안에서 실행되는 AOP
+private fun bugReportEventPublish(result: Any?) {
+    val event = (result as? ReportEvent) ?: throw ReportEventInvalidReturnException()
+    val outbox = reportOutboxService.createPending(
+        report = event.report,
+        slackPayload = objectMapper.writeValueAsString(event.toSpecificMap())
+    )
+    eventPublisher.publishEvent(ReportOutboxCreatedEvent(outbox.id))
+}
+
+// 커밋 이후 최초 전송. 스케줄러 재처리도 같은 attemptSend를 거친다.
 @Async
 @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-fun sendReportAlarm(event: ReportEvent) {
-    val payload = event.toSpecificMap()
-    val outbox = reportOutboxService.createPending(
-        event.report, objectMapper.writeValueAsString(payload)
-    )
-    runCatching {
-        alarmAdapter.sendAlarm(AlarmType.REPORT, payload)
-    }.onSuccess {
-        reportOutboxService.markSuccess(outbox.id)
-    }.onFailure {
-        reportOutboxService.markFailed(outbox.id, failureReason(it))
-    }
+fun sendReportAlarm(event: ReportOutboxCreatedEvent) {
+    reportOutboxService.attemptSend(event.reportOutboxId)
 }
 {% endhighlight %}
-      <p class="code-note">바깥쪽 예외 로깅은 생략했습니다. 상태 변경 메서드는 별도 트랜잭션에서 커밋됩니다.</p>
+      <p class="code-note">예외 로깅은 생략했습니다. attemptSend는 조건부 UPDATE로 작업을 선점한 뒤 전송하고, 결과(성공·재시도 예정·최종 실패)를 같은 트랜잭션에서 기록합니다.</p>
     </div>
   </div>
   <div class="verification">
     <h3 class="section-label">검증 결과</h3>
     <div class="metrics">
-      <div class="metric"><strong>FAILED</strong><span>Webhook 예외 발생 시 기록</span></div>
-      <div class="metric"><strong>SUCCESS</strong><span>스케줄러 재전송 성공 시 전환</span></div>
-      <div class="metric"><strong>3회 실패</strong><span>자동 재처리 중단 기준</span></div>
+      <div class="metric"><strong>22개</strong><span>단위·HTTP·통합 테스트 통과</span></div>
+      <div class="metric"><strong>8개 스레드</strong><span>동시 처리 시 단일 발송 검증</span></div>
+      <div class="metric"><strong>최대 4회</strong><span>최초 전송 포함 자동 재처리 한도</span></div>
     </div>
     <figure class="outbox-example">
-      <figcaption>Outbox 상태 전환 예시 · 아래 두 행은 동일 작업의 실패 후 복구를 표현합니다.</figcaption>
+      <figcaption>Outbox에 남기는 상태 · 전송 상태, 시도 횟수, HTTP 상태, 실패 사유</figcaption>
       <table>
-        <thead><tr><th scope="col">status</th><th scope="col">retry_count</th><th scope="col">failure_reason</th></tr></thead>
-        <tbody><tr><td class="status-failed">FAILED</td><td>1</td><td>Webhook Timeout</td></tr><tr><td class="status-success">SUCCESS</td><td>1</td><td>—</td></tr></tbody>
+        <thead><tr><th scope="col">검증 항목</th><th scope="col">결과</th></tr></thead>
+        <tbody>
+          <tr><td>동일한 HTTP 500 응답</td><td>기존: 실패를 감지하지 못함 → 개선: 오류 기록 및 재시도 대상으로 전환 (Before/After 테스트)</td></tr>
+          <tr><td>트랜잭션 원자성</td><td>Testcontainers MySQL 기반으로 검증</td></tr>
+          <tr><td>전체 흐름</td><td>신고 저장부터 커밋 후 알림 전송, 실패 재처리까지 검증</td></tr>
+        </tbody>
       </table>
     </figure>
-    <p>Mock 기반 단위 테스트로 발송 성공·실패, 재처리 상태 전환과 조회 조건을 확인했습니다. 실제 DB 커밋 경계 및 프로세스 종료 복구는 별도 통합 검증 대상입니다.</p>
+    <p>MockWebServer로 HTTP 500·404 응답을 재현해 기존 코드의 오류 감지 누락을 확인했고, 같은 시나리오로 개선 후 동작을 비교했습니다.</p>
   </div>
-  <aside class="limits"><h3>한계 · 다음 단계</h3><p>현재 Outbox는 신고 커밋 이후 생성됩니다. 그 사이 프로세스가 종료되면 작업 자체가 기록되지 않을 수 있어, 신고와 Outbox를 같은 트랜잭션에 저장하는 보완이 필요합니다. 전송 성공 후 상태 기록이 실패하면 알림이 중복될 가능성도 남습니다.</p></aside>
+  <aside class="limits"><h3>한계 · 다음 단계</h3><p>전송 도중 서버가 종료되면 트랜잭션이 롤백되어 다음 주기에 다시 시도되므로(at-least-once), 전송 성공 직후 장애가 나면 같은 알림이 중복될 수 있습니다. 또한 Slack 응답을 기다리는 동안 DB 커넥션과 해당 행의 잠금을 점유합니다. 신고 알림은 발생 빈도가 낮아 이 비용을 감수했습니다.</p></aside>
 </section>

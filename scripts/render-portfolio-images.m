@@ -31,7 +31,7 @@ int main(int argc, const char *argv[]) {
         }
         NSArray *diagrams = @[
             @[@"daily-question", @[@"동시 요청 A / B", @"오늘 이력 없음", @"각각 신규 발급"], @[@"사용자별 Lock", @"최신 이력 재조회", @"기존 반환 / 발급"], @"동일한 발급 판단이 중복 실행", @"조회부터 저장까지 보호 · Commit 후 락 해제", @NO],
-            @[@"report-notification", @[@"신고 저장", @"Slack 전송 실패", @"알림 누락"], @[@"신고 Commit", @"Outbox + 전송", @"실패 건 재처리"], @"실패한 전송을 다시 찾을 기록이 없음", @"PENDING → SUCCESS / FAILED → Scheduler", @NO],
+            @[@"report-notification", @[@"신고 저장", @"Slack 전송 실패", @"알림 누락"], @[@"신고 + Outbox 저장", @"Commit 후 전송", @"실패 건 재처리"], @"실패한 전송을 다시 찾을 기록이 없음", @"같은 트랜잭션 저장 · PENDING → SUCCESS / FAILED → Scheduler", @NO],
             @[@"coupon-consistency", @[@"동시 요청 A / B", @"같은 재고 조회", @"각각 발급 진행"], @[@"Redisson Lock", @"조건부 재고 차감", @"UNIQUE 발급"], @"재고 초과 · 사용자별 중복 발급 가능", @"Redis는 경합 제어 · DB는 정합성 보호", @YES],
             @[@"popular-query", @[@"좋아요 100만 건", @"실시간 집계·정렬", @"Top 20 조회"], @[@"쓰기 시 집계 갱신", @"메타 + 인덱스", @"Top 20 조회"], @"조회할 때마다 GROUP BY + COUNT + ORDER BY", @"읽기 경로에서 반복 집계 제거", @YES]
         ];
