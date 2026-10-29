@@ -55,18 +55,18 @@
   role: Backend
   period: 2023.09 ~ 2024.01
   summary: 만료가 임박한 기프티콘을 사고파는 중고거래 플랫폼
-  focus: 쿠폰의 재고 정합성과 인기순 조회의 성능을 개선했습니다.
+  focus: 선착순 쿠폰 발급 구조를 측정 결과에 따라 재설계하고, 인기순 조회의 성능을 개선했습니다.
   url: /portfolio/givemeticon/
   github: https://github.com/f-lab-edu/givemeticon
-  stack: [Java, Spring Boot, MyBatis, MySQL, Redis]
+  stack: [Java, Spring Boot, MyBatis, MySQL, Redis, RabbitMQ]
   cases:
     - id: coupon-consistency
       number: '01'
-      title: 재고와 중복 발급 규칙을 DB까지 보호
-      summary: Redisson 분산락 · 원자적 갱신 · UNIQUE
-      result: 재고 100개 → 발급 100개 · 중복 0건
+      title: 측정 결과를 따라 세 번 바꾼 선착순 쿠폰 발급 구조
+      summary: MySQL 판정 → Redis 판정 → RabbitMQ 접수 + MySQL 단일 판정
+      result: 초과 발급 7건 → 0건 · DB 48초 중단에도 유실 0
       image: /assets/portfolio/coupon-consistency.png
-      alt: Redisson 분산락과 DB 조건부 갱신 및 유니크 제약으로 재고와 중복 발급을 보호하는 구조
+      alt: 응답 전에 MySQL이 재고 행을 잠그고 판정하던 구조를 RabbitMQ 접수와 MySQL 단일 판정으로 바꾼 구조
     - id: popular-query
       number: '02'
       title: 인기순 조회에서 반복 집계 비용 제거
